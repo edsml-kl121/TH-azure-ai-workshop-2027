@@ -1,0 +1,9 @@
+azure-ai-documentintelligence
+azure-identity
+python-dotenv
+requests
+agent-framework --pre
+azure-search-documents==11.7.0b2
+azure-ai-agents
+azure-ai-inference
+azure-monitor-opentelemetry
