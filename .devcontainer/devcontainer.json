@@ -4,100 +4,25 @@
   
   "features": {
     "ghcr.io/devcontainers/features/azure-cli:1": {
-      "version": "latest",
-      "extensions": "account,ai,apim,containerapp,cognitiveservices,search"
+      "extensions": "ai,search,cognitiveservices"
     },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "moby": true
-    },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    },
-    "ghcr.io/devcontainers/features/git:1": {
-      "version": "latest"
+      "moby": false
     }
   },
 
   "customizations": {
     "vscode": {
       "extensions": [
-        // Python
         "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-python.debugpy",
-        
-        // Azure
         "ms-vscode.azure-account",
-        "ms-azuretools.vscode-azureresourcegroups",
-        "ms-azuretools.vscode-bicep",
-        "ms-azuretools.vscode-azurefunctions",
-        "ms-azuretools.vscode-docker",
-        
-        // AI/ML
-        "ms-toolsai.jupyter",
-        "ms-toolsai.vscode-jupyter-cell-tags",
-        "ms-toolsai.vscode-jupyter-slideshow",
-        
-        // General
-        "ms-vscode.vscode-node-azure-pack",
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
-        "eamodio.gitlens",
-        "streetsidesoftware.code-spell-checker",
-        "redhat.vscode-yaml",
-        "ms-vscode.makefile-tools"
+        "ms-azuretools.vscode-azureresourcegroups"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python",
-        "python.terminal.activateEnvironment": true,
-        "python.linting.enabled": true,
-        "python.linting.pylintEnabled": false,
-        "python.linting.flake8Enabled": true,
-        "python.formatting.provider": "black",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-          "source.organizeImports": "explicit"
-        },
-        "files.exclude": {
-          "**/__pycache__": true,
-          "**/*.pyc": true,
-          ".pytest_cache": true,
-          "**/.DS_Store": true
-        },
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "bicep.trace.server": "verbose"
+        "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python"
       }
     }
   },
 
-  "forwardPorts": [8000, 8080, 3000],
-  "portsAttributes": {
-    "8000": {
-      "label": "FastAPI Backend",
-      "onAutoForward": "notify"
-    },
-    "8080": {
-      "label": "Development Server",
-      "onAutoForward": "notify"
-    },
-    "3000": {
-      "label": "Frontend",
-      "onAutoForward": "silent"
-    }
-  },
-
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
-
-  "remoteUser": "vscode",
-
-  "mounts": [
-    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached"
-  ],
-
-  "containerEnv": {
-    "PYTHONUNBUFFERED": "1",
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}"
-  }
+  "remoteUser": "vscode"
 }
