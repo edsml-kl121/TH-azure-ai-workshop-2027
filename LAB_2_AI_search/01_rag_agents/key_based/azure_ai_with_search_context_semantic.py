@@ -5,7 +5,7 @@ import os
 
 from agent_framework import ChatAgent
 from agent_framework.azure import AzureAIAgentClient, AzureAISearchContextProvider
-from azure.identity.aio import AzureCliCredential
+from azure.core.credentials import AzureKeyCredential
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -13,7 +13,7 @@ load_dotenv()
 
 """
 This sample demonstrates how to use Azure AI Search with semantic mode for RAG
-(Retrieval Augmented Generation) with Azure AI agents.
+(Retrieval Augmented Generation) with Azure AI agents using API key authentication.
 
 **Semantic mode** is the recommended default mode:
 - Fast hybrid search combining vector and keyword search
@@ -26,10 +26,11 @@ Prerequisites:
 2. An Azure AI Foundry project with a model deployment
 3. Set the following environment variables:
    - AZURE_SEARCH_ENDPOINT: Your Azure AI Search endpoint
-   - AZURE_SEARCH_API_KEY: (Optional) Your search API key - if not provided, uses DefaultAzureCredential for Entra ID
+   - AZURE_SEARCH_API_KEY: Your Azure AI Search API key
    - AZURE_SEARCH_INDEX_NAME: Your search index name
    - AZURE_AI_PROJECT_ENDPOINT: Your Azure AI Foundry project endpoint
-   - AZURE_AI_MODEL_DEPLOYMENT_NAME: Your model deployment name (e.g., "gpt-4o")
+   - AZURE_AI_FOUNDRY_KEY: Your Azure AI Foundry API key
+   - AZURE_AI_MODEL_DEPLOYMENT_NAME: Your model deployment name (e.g., "gpt-4o-mini")
 """
 
 # Sample queries to demonstrate RAG
@@ -41,33 +42,33 @@ USER_INPUTS = [
 
 
 async def main() -> None:
-    """Main function demonstrating Azure AI Search semantic mode."""
+    """Main function demonstrating Azure AI Search semantic mode with API key authentication."""
 
     # Get configuration from environment
     search_endpoint = os.environ["AZURE_SEARCH_ENDPOINT"]
-    search_key = os.environ.get("AZURE_SEARCH_API_KEY")
+    search_key = os.environ["AZURE_SEARCH_API_KEY"]
     index_name = os.environ["AZURE_SEARCH_INDEX_NAME"]
     project_endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
-    model_deployment = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o")
+    ai_key = os.environ["AZURE_AI_FOUNDRY_KEY"]
+    model_deployment = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
 
     # Create Azure AI Search context provider with semantic mode (recommended, fast)
-    print("Using SEMANTIC mode (hybrid search + semantic ranking, fast)\n")
+    print("Using SEMANTIC mode with API KEY authentication (hybrid search + semantic ranking, fast)\n")
     search_provider = AzureAISearchContextProvider(
         endpoint=search_endpoint,
         index_name=index_name,
-        api_key=search_key,  # Use api_key for API key auth, or credential for managed identity
-        credential=AzureCliCredential() if not search_key else None,
+        api_key=search_key,
         mode="semantic",  # Default mode
         top_k=3,  # Retrieve top 3 most relevant documents
     )
 
-    # Create agent with search context provider
+    # Create agent with search context provider using API key authentication
     async with (
         search_provider,
         AzureAIAgentClient(
             project_endpoint=project_endpoint,
             model_deployment_name=model_deployment,
-            credential=AzureCliCredential(),
+            credential=AzureKeyCredential(ai_key),
         ) as client,
         ChatAgent(
             chat_client=client,
@@ -79,7 +80,7 @@ async def main() -> None:
             context_providers=[search_provider],
         ) as agent,
     ):
-        print("=== Azure AI Agent with Search Context (Semantic Mode) ===\n")
+        print("=== Azure AI Agent with Search Context (Semantic Mode - API Key Auth) ===\n")
 
         for user_input in USER_INPUTS:
             print(f"User: {user_input}")

@@ -1,12 +1,11 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "languageVersion": "2.0",
   "contentVersion": "1.0.0.0",
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.38.33.27573",
-      "templateHash": "12442337477266113414"
+      "version": "0.39.26.7824",
+      "templateHash": "4144770596935256648"
     }
   },
   "parameters": {
@@ -122,8 +121,8 @@
     },
     "ownerRoleId": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
   },
-  "resources": {
-    "userOwnerAssignment": {
+  "resources": [
+    {
       "condition": "[not(empty(parameters('userObjectId')))]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
@@ -134,7 +133,7 @@
         "principalType": "User"
       }
     },
-    "monitoring": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "monitoring-deployment",
@@ -163,8 +162,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.38.33.27573",
-              "templateHash": "7538022114159527359"
+              "version": "0.39.26.7824",
+              "templateHash": "14852699979657907428"
             }
           },
           "parameters": {
@@ -262,7 +261,7 @@
         }
       }
     },
-    "aiFoundry": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "ai-foundry-deployment",
@@ -290,19 +289,30 @@
           "embeddingCapacity": {
             "value": "[parameters('embeddingCapacity')]"
           },
+          "projectName": {
+            "value": "proj-default"
+          },
+          "projectDisplayName": {
+            "value": "Default Workshop Project"
+          },
+          "projectDescription": {
+            "value": "AI Foundry project for workshop labs"
+          },
+          "userObjectId": {
+            "value": "[parameters('userObjectId')]"
+          },
           "tags": {
             "value": "[variables('commonTags')]"
           }
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "languageVersion": "2.0",
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.38.33.27573",
-              "templateHash": "17100985548738342456"
+              "version": "0.39.26.7824",
+              "templateHash": "15175548115718554510"
             }
           },
           "parameters": {
@@ -347,6 +357,34 @@
                 "description": "Embedding model capacity (TPM in thousands)"
               }
             },
+            "projectName": {
+              "type": "string",
+              "defaultValue": "proj-default",
+              "metadata": {
+                "description": "Project name for Foundry portal"
+              }
+            },
+            "projectDisplayName": {
+              "type": "string",
+              "defaultValue": "Default Project",
+              "metadata": {
+                "description": "Project display name"
+              }
+            },
+            "projectDescription": {
+              "type": "string",
+              "defaultValue": "Default AI Foundry project for workshop",
+              "metadata": {
+                "description": "Project description"
+              }
+            },
+            "userObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "User Object ID for RBAC assignment (optional)"
+              }
+            },
             "tags": {
               "type": "object",
               "defaultValue": {},
@@ -355,10 +393,13 @@
               }
             }
           },
-          "resources": {
-            "aiFoundry": {
+          "variables": {
+            "cognitiveServicesOpenAIUserRoleId": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
+          },
+          "resources": [
+            {
               "type": "Microsoft.CognitiveServices/accounts",
-              "apiVersion": "2024-10-01",
+              "apiVersion": "2025-04-01-preview",
               "name": "[parameters('aiFoundryName')]",
               "location": "[parameters('location')]",
               "kind": "AIServices",
@@ -372,15 +413,29 @@
                 "customSubDomainName": "[parameters('aiFoundryName')]",
                 "publicNetworkAccess": "Enabled",
                 "disableLocalAuth": false,
-                "apiProperties": {
-                  "statisticsEnabled": false
-                }
+                "allowProjectManagement": true
               },
               "tags": "[parameters('tags')]"
             },
-            "gpt4Deployment": {
+            {
+              "type": "Microsoft.CognitiveServices/accounts/projects",
+              "apiVersion": "2025-04-01-preview",
+              "name": "[format('{0}/{1}', parameters('aiFoundryName'), parameters('projectName'))]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "description": "[parameters('projectDescription')]",
+                "displayName": "[parameters('projectDisplayName')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName'))]"
+              ]
+            },
+            {
               "type": "Microsoft.CognitiveServices/accounts/deployments",
-              "apiVersion": "2024-10-01",
+              "apiVersion": "2025-04-01-preview",
               "name": "[format('{0}/{1}', parameters('aiFoundryName'), parameters('gptDeploymentName'))]",
               "sku": {
                 "name": "Standard",
@@ -396,12 +451,13 @@
                 "raiPolicyName": "Microsoft.Default"
               },
               "dependsOn": [
-                "aiFoundry"
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName'))]",
+                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('aiFoundryName'), parameters('projectName'))]"
               ]
             },
-            "embeddingDeployment": {
+            {
               "type": "Microsoft.CognitiveServices/accounts/deployments",
-              "apiVersion": "2024-10-01",
+              "apiVersion": "2025-04-01-preview",
               "name": "[format('{0}/{1}', parameters('aiFoundryName'), parameters('embeddingDeploymentName'))]",
               "sku": {
                 "name": "Standard",
@@ -416,11 +472,26 @@
                 "versionUpgradeOption": "OnceNewDefaultVersionAvailable"
               },
               "dependsOn": [
-                "aiFoundry",
-                "gpt4Deployment"
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName'))]",
+                "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('aiFoundryName'), parameters('gptDeploymentName'))]"
+              ]
+            },
+            {
+              "condition": "[not(empty(parameters('userObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.CognitiveServices/accounts/{0}', parameters('aiFoundryName'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName')), parameters('userObjectId'), variables('cognitiveServicesOpenAIUserRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesOpenAIUserRoleId'))]",
+                "principalId": "[parameters('userObjectId')]",
+                "principalType": "User"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName'))]"
               ]
             }
-          },
+          ],
           "outputs": {
             "aiFoundryId": {
               "type": "string",
@@ -432,11 +503,19 @@
             },
             "foundryEndpoint": {
               "type": "string",
-              "value": "[reference('aiFoundry').endpoint]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName')), '2025-04-01-preview').endpoint]"
             },
             "projectEndpoint": {
               "type": "string",
-              "value": "[format('https://{0}.services.ai.azure.com/api/projects/proj-default', parameters('aiFoundryName'))]"
+              "value": "[format('https://{0}.services.ai.azure.com/api/projects/{1}', parameters('aiFoundryName'), parameters('projectName'))]"
+            },
+            "projectName": {
+              "type": "string",
+              "value": "[parameters('projectName')]"
+            },
+            "projectId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('aiFoundryName'), parameters('projectName'))]"
             },
             "gptDeploymentName": {
               "type": "string",
@@ -448,20 +527,17 @@
             },
             "aiFoundryPrincipalId": {
               "type": "string",
-              "value": "[reference('aiFoundry', '2024-10-01', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName')), '2025-04-01-preview', 'full').identity.principalId]"
             },
-            "aiFoundryKey": {
-              "type": "securestring",
-              "metadata": {
-                "description": "API Key for fallback authentication (secure)"
-              },
-              "value": "[listKeys('aiFoundry', '2024-10-01').key1]"
+            "projectPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('aiFoundryName'), parameters('projectName')), '2025-04-01-preview', 'full').identity.principalId]"
             }
           }
         }
       }
     },
-    "aiSearch": {
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "ai-search-deployment",
@@ -481,7 +557,10 @@
             "value": "[parameters('searchSku')]"
           },
           "aiFoundryPrincipalId": {
-            "value": "[reference('aiFoundry').outputs.aiFoundryPrincipalId.value]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.aiFoundryPrincipalId.value]"
+          },
+          "userObjectId": {
+            "value": "[parameters('userObjectId')]"
           },
           "tags": {
             "value": "[variables('commonTags')]"
@@ -489,13 +568,12 @@
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "languageVersion": "2.0",
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.38.33.27573",
-              "templateHash": "2243301411528102186"
+              "version": "0.39.26.7824",
+              "templateHash": "12020695778405594520"
             }
           },
           "parameters": {
@@ -514,7 +592,7 @@
             },
             "searchServiceSku": {
               "type": "string",
-              "defaultValue": "standard",
+              "defaultValue": "basic",
               "allowedValues": [
                 "basic",
                 "standard",
@@ -533,6 +611,13 @@
                 "description": "Principal ID of the AI Foundry managed identity"
               }
             },
+            "userObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "User Object ID for RBAC assignment (optional)"
+              }
+            },
             "tags": {
               "type": "object",
               "defaultValue": {},
@@ -543,10 +628,11 @@
           },
           "variables": {
             "searchIndexDataReaderRoleId": "1407120a-92aa-4202-b7e9-c0e197c71c8f",
-            "searchIndexDataContributorRoleId": "8ebe5a00-799e-43f5-93ac-243d3dce84a7"
+            "searchIndexDataContributorRoleId": "8ebe5a00-799e-43f5-93ac-243d3dce84a7",
+            "searchServiceContributorRoleId": "7ca78c08-252a-4471-8644-bb5ff32d4ba0"
           },
-          "resources": {
-            "searchService": {
+          "resources": [
+            {
               "type": "Microsoft.Search/searchServices",
               "apiVersion": "2024-06-01-preview",
               "name": "[parameters('searchServiceName')]",
@@ -567,7 +653,7 @@
               },
               "tags": "[parameters('tags')]"
             },
-            "aiFoundrySearchReaderRole": {
+            {
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[format('Microsoft.Search/searchServices/{0}', parameters('searchServiceName'))]",
@@ -578,10 +664,10 @@
                 "principalType": "ServicePrincipal"
               },
               "dependsOn": [
-                "searchService"
+                "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]"
               ]
             },
-            "aiFoundrySearchContributorRole": {
+            {
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[format('Microsoft.Search/searchServices/{0}', parameters('searchServiceName'))]",
@@ -592,10 +678,40 @@
                 "principalType": "ServicePrincipal"
               },
               "dependsOn": [
-                "searchService"
+                "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]"
+              ]
+            },
+            {
+              "condition": "[not(empty(parameters('userObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.Search/searchServices/{0}', parameters('searchServiceName'))]",
+              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), parameters('userObjectId'), variables('searchIndexDataContributorRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('searchIndexDataContributorRoleId'))]",
+                "principalId": "[parameters('userObjectId')]",
+                "principalType": "User"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]"
+              ]
+            },
+            {
+              "condition": "[not(empty(parameters('userObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.Search/searchServices/{0}', parameters('searchServiceName'))]",
+              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), parameters('userObjectId'), variables('searchServiceContributorRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('searchServiceContributorRoleId'))]",
+                "principalId": "[parameters('userObjectId')]",
+                "principalType": "User"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]"
               ]
             }
-          },
+          ],
           "outputs": {
             "searchServiceId": {
               "type": "string",
@@ -611,23 +727,87 @@
             },
             "searchPrincipalId": {
               "type": "string",
-              "value": "[reference('searchService', '2024-06-01-preview', 'full').identity.principalId]"
-            },
-            "searchApiKey": {
-              "type": "securestring",
-              "metadata": {
-                "description": "Search Admin Key for fallback authentication (secure)"
-              },
-              "value": "[listAdminKeys('searchService', '2024-06-01-preview').primaryKey]"
+              "value": "[reference(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), '2024-06-01-preview', 'full').identity.principalId]"
             }
           }
         }
       },
       "dependsOn": [
-        "aiFoundry"
+        "[resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment')]"
       ]
     },
-    "apim": {
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "search-to-foundry-access",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "aiFoundryName": {
+            "value": "[variables('aiFoundryName')]"
+          },
+          "searchPrincipalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-search-deployment'), '2025-04-01').outputs.searchPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "14076043965122833636"
+            }
+          },
+          "parameters": {
+            "aiFoundryName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the AI Foundry account"
+              }
+            },
+            "searchPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID of the AI Search managed identity"
+              }
+            }
+          },
+          "variables": {
+            "cognitiveServicesOpenAIUserRoleId": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.CognitiveServices/accounts/{0}', parameters('aiFoundryName'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName')), parameters('searchPrincipalId'), variables('cognitiveServicesOpenAIUserRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesOpenAIUserRoleId'))]",
+                "principalId": "[parameters('searchPrincipalId')]",
+                "principalType": "ServicePrincipal",
+                "description": "Allow AI Search to call AI Foundry OpenAI endpoints for knowledge base answer synthesis"
+              }
+            }
+          ],
+          "outputs": {
+            "roleAssignmentId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName')), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName')), parameters('searchPrincipalId'), variables('cognitiveServicesOpenAIUserRoleId')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'ai-search-deployment')]"
+      ]
+    },
+    {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
       "name": "apim-deployment",
@@ -661,13 +841,12 @@
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "languageVersion": "2.0",
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.38.33.27573",
-              "templateHash": "8814948779982874600"
+              "version": "0.39.26.7824",
+              "templateHash": "1242345186846569813"
             }
           },
           "parameters": {
@@ -725,8 +904,8 @@
               }
             }
           },
-          "resources": {
-            "apimService": {
+          "resources": [
+            {
               "type": "Microsoft.ApiManagement/service",
               "apiVersion": "2023-09-01-preview",
               "name": "[parameters('apimServiceName')]",
@@ -747,7 +926,7 @@
               },
               "tags": "[parameters('tags')]"
             },
-            "mcpApi": {
+            {
               "type": "Microsoft.ApiManagement/service/apis",
               "apiVersion": "2023-09-01-preview",
               "name": "[format('{0}/{1}', parameters('apimServiceName'), 'mcp-api')]",
@@ -763,10 +942,10 @@
                 "isCurrent": true
               },
               "dependsOn": [
-                "apimService"
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apimServiceName'))]"
               ]
             },
-            "mcpOperation": {
+            {
               "type": "Microsoft.ApiManagement/service/apis/operations",
               "apiVersion": "2023-09-01-preview",
               "name": "[format('{0}/{1}/{2}', parameters('apimServiceName'), 'mcp-api', 'mcp-operation')]",
@@ -778,10 +957,10 @@
                 "responses": []
               },
               "dependsOn": [
-                "mcpApi"
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimServiceName'), 'mcp-api')]"
               ]
             },
-            "mcpBackend": {
+            {
               "condition": "[not(empty(parameters('mcpBackendUrl')))]",
               "type": "Microsoft.ApiManagement/service/backends",
               "apiVersion": "2023-09-01-preview",
@@ -792,10 +971,10 @@
                 "description": "MCP Backend Container App"
               },
               "dependsOn": [
-                "apimService"
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apimServiceName'))]"
               ]
             },
-            "mcpApiPolicy": {
+            {
               "type": "Microsoft.ApiManagement/service/apis/policies",
               "apiVersion": "2023-09-01-preview",
               "name": "[format('{0}/{1}/{2}', parameters('apimServiceName'), 'mcp-api', 'policy')]",
@@ -804,10 +983,10 @@
                 "format": "xml"
               },
               "dependsOn": [
-                "mcpApi"
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimServiceName'), 'mcp-api')]"
               ]
             },
-            "mcpSubscription": {
+            {
               "type": "Microsoft.ApiManagement/service/subscriptions",
               "apiVersion": "2023-09-01-preview",
               "name": "[format('{0}/{1}', parameters('apimServiceName'), 'mcp-subscription')]",
@@ -817,11 +996,11 @@
                 "state": "active"
               },
               "dependsOn": [
-                "apimService",
-                "mcpApi"
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apimServiceName'))]",
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimServiceName'), 'mcp-api')]"
               ]
             }
-          },
+          ],
           "outputs": {
             "apimServiceId": {
               "type": "string",
@@ -833,144 +1012,127 @@
             },
             "apimGatewayUrl": {
               "type": "string",
-              "value": "[reference('apimService').gatewayUrl]"
+              "value": "[reference(resourceId('Microsoft.ApiManagement/service', parameters('apimServiceName')), '2023-09-01-preview').gatewayUrl]"
             },
             "mcpServerUrl": {
               "type": "string",
-              "value": "[format('{0}/api-mcp/mcp', reference('apimService').gatewayUrl)]"
+              "value": "[format('{0}/api-mcp/mcp', reference(resourceId('Microsoft.ApiManagement/service', parameters('apimServiceName')), '2023-09-01-preview').gatewayUrl)]"
             },
             "apimPrincipalId": {
               "type": "string",
-              "value": "[reference('apimService', '2023-09-01-preview', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.ApiManagement/service', parameters('apimServiceName')), '2023-09-01-preview', 'full').identity.principalId]"
             },
-            "mcpSubscriptionKey": {
-              "type": "securestring",
-              "metadata": {
-                "description": "MCP API Subscription Key (secure)"
-              },
-              "value": "[listSecrets('mcpSubscription', '2023-09-01-preview').primaryKey]"
+            "mcpSubscriptionName": {
+              "type": "string",
+              "value": "mcp-subscription"
             }
           }
         }
       }
     }
-  },
+  ],
   "outputs": {
     "FOUNDRY_ENDPOINT": {
       "type": "string",
       "metadata": {
         "description": "Azure AI Foundry endpoint (Cognitive Services)"
       },
-      "value": "[reference('aiFoundry').outputs.foundryEndpoint.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.foundryEndpoint.value]"
     },
     "AZURE_AI_PROJECT_ENDPOINT": {
       "type": "string",
       "metadata": {
         "description": "Azure AI Project endpoint"
       },
-      "value": "[reference('aiFoundry').outputs.projectEndpoint.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.projectEndpoint.value]"
     },
     "AZURE_AI_MODEL_DEPLOYMENT_NAME": {
       "type": "string",
       "metadata": {
         "description": "GPT model deployment name"
       },
-      "value": "[reference('aiFoundry').outputs.gptDeploymentName.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.gptDeploymentName.value]"
     },
     "AZURE_AI_EMBEDDING_DEPLOYMENT_NAME": {
       "type": "string",
       "metadata": {
         "description": "Embedding model deployment name"
       },
-      "value": "[reference('aiFoundry').outputs.embeddingDeploymentName.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.embeddingDeploymentName.value]"
     },
     "AZURE_SEARCH_ENDPOINT": {
       "type": "string",
       "metadata": {
         "description": "Azure AI Search endpoint"
       },
-      "value": "[reference('aiSearch').outputs.searchEndpoint.value]"
-    },
-    "AZURE_SEARCH_API_KEY": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Azure AI Search API Key (secure - for fallback authentication)"
-      },
-      "value": "[listOutputsWithSecureValues('aiSearch', '2025-04-01').searchApiKey]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-search-deployment'), '2025-04-01').outputs.searchEndpoint.value]"
     },
     "MCP_SERVER_URL": {
       "type": "string",
       "metadata": {
         "description": "MCP Server URL via APIM"
       },
-      "value": "[reference('apim').outputs.mcpServerUrl.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'apim-deployment'), '2025-04-01').outputs.mcpServerUrl.value]"
     },
     "APIM_GATEWAY_URL": {
       "type": "string",
       "metadata": {
         "description": "APIM Gateway URL"
       },
-      "value": "[reference('apim').outputs.apimGatewayUrl.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'apim-deployment'), '2025-04-01').outputs.apimGatewayUrl.value]"
     },
-    "MCP_API_KEY": {
-      "type": "securestring",
+    "MCP_SUBSCRIPTION_NAME": {
+      "type": "string",
       "metadata": {
-        "description": "MCP API Subscription Key (secure)"
+        "description": "MCP Subscription Name for key retrieval"
       },
-      "value": "[listOutputsWithSecureValues('apim', '2025-04-01').mcpSubscriptionKey]"
-    },
-    "AZURE_AI_FOUNDRY_KEY": {
-      "type": "securestring",
-      "metadata": {
-        "description": "AI Foundry API Key (secure - for fallback authentication)"
-      },
-      "value": "[listOutputsWithSecureValues('aiFoundry', '2025-04-01').aiFoundryKey]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'apim-deployment'), '2025-04-01').outputs.mcpSubscriptionName.value]"
     },
     "APPLICATIONINSIGHTS_CONNECTION_STRING": {
       "type": "string",
       "metadata": {
         "description": "Application Insights Connection String"
       },
-      "value": "[reference('monitoring').outputs.appInsightsConnectionString.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring-deployment'), '2025-04-01').outputs.appInsightsConnectionString.value]"
     },
     "APPLICATIONINSIGHTS_INSTRUMENTATION_KEY": {
       "type": "string",
       "metadata": {
         "description": "Application Insights Instrumentation Key"
       },
-      "value": "[reference('monitoring').outputs.appInsightsInstrumentationKey.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring-deployment'), '2025-04-01').outputs.appInsightsInstrumentationKey.value]"
     },
     "aiFoundryId": {
       "type": "string",
-      "value": "[reference('aiFoundry').outputs.aiFoundryId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.aiFoundryId.value]"
     },
     "searchServiceId": {
       "type": "string",
-      "value": "[reference('aiSearch').outputs.searchServiceId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-search-deployment'), '2025-04-01').outputs.searchServiceId.value]"
     },
     "apimServiceId": {
       "type": "string",
-      "value": "[reference('apim').outputs.apimServiceId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'apim-deployment'), '2025-04-01').outputs.apimServiceId.value]"
     },
     "logAnalyticsId": {
       "type": "string",
-      "value": "[reference('monitoring').outputs.logAnalyticsId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring-deployment'), '2025-04-01').outputs.logAnalyticsId.value]"
     },
     "appInsightsId": {
       "type": "string",
-      "value": "[reference('monitoring').outputs.appInsightsId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'monitoring-deployment'), '2025-04-01').outputs.appInsightsId.value]"
     },
     "aiFoundryPrincipalId": {
       "type": "string",
-      "value": "[reference('aiFoundry').outputs.aiFoundryPrincipalId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-foundry-deployment'), '2025-04-01').outputs.aiFoundryPrincipalId.value]"
     },
     "searchPrincipalId": {
       "type": "string",
-      "value": "[reference('aiSearch').outputs.searchPrincipalId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'ai-search-deployment'), '2025-04-01').outputs.searchPrincipalId.value]"
     },
     "apimPrincipalId": {
       "type": "string",
-      "value": "[reference('apim').outputs.apimPrincipalId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'apim-deployment'), '2025-04-01').outputs.apimPrincipalId.value]"
     }
   }
 }

@@ -20,10 +20,11 @@ param apimPublisherName string = 'AI Workshop'
   'Consumption'
   'Developer'
   'Basic'
+  'BasicV2'
   'Standard'
   'Premium'
 ])
-param apimSku string = 'Consumption'
+param apimSku string = 'BasicV2'
 
 @description('Container App backend URL for MCP (leave empty if not configured)')
 param mcpBackendUrl string = ''
@@ -35,10 +36,10 @@ param mcpBackendUrl string = ''
   'standard2'
   'standard3'
 ])
-param searchSku string = 'standard'
+param searchSku string = 'basic'
 
 @description('GPT model capacity (TPM in thousands)')
-param gptCapacity int = 20
+param gptCapacity int = 40
 
 @description('Embedding model capacity (TPM in thousands)')
 param embeddingCapacity int = 50
@@ -81,10 +82,14 @@ module aiFoundry 'modules/ai-foundry.bicep' = {
   params: {
     location: location
     aiFoundryName: aiFoundryName
-    gptDeploymentName: 'gpt-4o'
+    gptDeploymentName: 'gpt-4o-mini'
     gptCapacity: gptCapacity
-    embeddingDeploymentName: 'text-embedding-3-large'
+    embeddingDeploymentName: 'text-embedding-3-small'
     embeddingCapacity: embeddingCapacity
+    projectName: 'proj-default'
+    projectDisplayName: 'Default Workshop Project'
+    projectDescription: 'AI Foundry project for workshop labs'
+    userObjectId: userObjectId
     tags: commonTags
   }
 }
@@ -97,7 +102,17 @@ module aiSearch 'modules/ai-search.bicep' = {
     searchServiceName: searchServiceName
     searchServiceSku: searchSku
     aiFoundryPrincipalId: aiFoundry.outputs.aiFoundryPrincipalId
+    userObjectId: userObjectId
     tags: commonTags
+  }
+}
+
+// Grant AI Search managed identity access to AI Foundry for knowledge base operations
+module searchToFoundryAccess 'modules/cross-resource-rbac.bicep' = {
+  name: 'search-to-foundry-access'
+  params: {
+    aiFoundryName: aiFoundryName
+    searchPrincipalId: aiSearch.outputs.searchPrincipalId
   }
 }
 

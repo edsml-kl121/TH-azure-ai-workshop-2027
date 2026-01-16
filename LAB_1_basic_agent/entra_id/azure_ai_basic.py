@@ -37,21 +37,19 @@ async def non_streaming_example() -> None:
     # and deleted after getting a response
     # For authentication, run `az login` command in terminal or replace AzureCliCredential with preferred
     # authentication option.
-    with get_tracer().start_as_current_span("Single Agent Chat", kind=SpanKind.CLIENT) as current_span:
-        print(f"Trace ID: {format_trace_id(current_span.get_span_context().trace_id)}")
-        async with (
-            AzureCliCredential() as credential,
-            AzureAIAgentClient(credential=credential).create_agent(
-                name="MewWeatherAgent",
-                instructions="You are a helpful weather agent.",
-                tools=get_weather,
-                id="mew-weather-agent",
-            ) as agent,
-        ):
-            query = "What's the weather like in Seattle?"
-            print(f"User: {query}")
-            result = await agent.run(query)
-            print(f"Agent: {result}\n")
+    async with (
+        AzureCliCredential() as credential,
+        AzureAIAgentClient(credential=credential).create_agent(
+            name="MewWeatherAgent",
+            instructions="You are a helpful weather agent.",
+            tools=get_weather,
+            id="mew-weather-agent",
+        ) as agent,
+    ):
+        query = "What's the weather like in Seattle?"
+        print(f"User: {query}")
+        result = await agent.run(query)
+        print(f"Agent: {result}\n")
 
 
 # async def streaming_example() -> None:

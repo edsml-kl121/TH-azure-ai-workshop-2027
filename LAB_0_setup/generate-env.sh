@@ -38,16 +38,16 @@ if [ -z "$OUTPUTS" ]; then
     exit 1
 fi
 
-# Extract values from outputs (non-secure outputs)
-FOUNDRY_ENDPOINT=$(echo "$OUTPUTS" | jq -r '.FOUNDRY_ENDPOINT.value // empty')
-AZURE_AI_PROJECT_ENDPOINT=$(echo "$OUTPUTS" | jq -r '.AZURE_AI_PROJECT_ENDPOINT.value // empty')
-AZURE_AI_MODEL_DEPLOYMENT_NAME=$(echo "$OUTPUTS" | jq -r '.AZURE_AI_MODEL_DEPLOYMENT_NAME.value // empty')
-AZURE_AI_EMBEDDING_DEPLOYMENT_NAME=$(echo "$OUTPUTS" | jq -r '.AZURE_AI_EMBEDDING_DEPLOYMENT_NAME.value // empty')
-AZURE_SEARCH_ENDPOINT=$(echo "$OUTPUTS" | jq -r '.AZURE_SEARCH_ENDPOINT.value // empty')
-MCP_SERVER_URL=$(echo "$OUTPUTS" | jq -r '.MCP_SERVER_URL.value // empty')
-APIM_GATEWAY_URL=$(echo "$OUTPUTS" | jq -r '.APIM_GATEWAY_URL.value // empty')
-APPLICATIONINSIGHTS_CONNECTION_STRING=$(echo "$OUTPUTS" | jq -r '.APPLICATIONINSIGHTS_CONNECTION_STRING.value // empty')
-APPLICATIONINSIGHTS_INSTRUMENTATION_KEY=$(echo "$OUTPUTS" | jq -r '.APPLICATIONINSIGHTS_INSTRUMENTATION_KEY.value // empty')
+# Extract values from outputs (handle both case-sensitive and case-insensitive keys)
+FOUNDRY_ENDPOINT=$(echo "$OUTPUTS" | jq -r '(.FOUNDRY_ENDPOINT.value // .foundrY_ENDPOINT.value) // empty')
+AZURE_AI_PROJECT_ENDPOINT=$(echo "$OUTPUTS" | jq -r '(.AZURE_AI_PROJECT_ENDPOINT.value // .azurE_AI_PROJECT_ENDPOINT.value) // empty')
+AZURE_AI_MODEL_DEPLOYMENT_NAME=$(echo "$OUTPUTS" | jq -r '(.AZURE_AI_MODEL_DEPLOYMENT_NAME.value // .azurE_AI_MODEL_DEPLOYMENT_NAME.value) // empty')
+AZURE_AI_EMBEDDING_DEPLOYMENT_NAME=$(echo "$OUTPUTS" | jq -r '(.AZURE_AI_EMBEDDING_DEPLOYMENT_NAME.value // .azurE_AI_EMBEDDING_DEPLOYMENT_NAME.value) // empty')
+AZURE_SEARCH_ENDPOINT=$(echo "$OUTPUTS" | jq -r '(.AZURE_SEARCH_ENDPOINT.value // .azurE_SEARCH_ENDPOINT.value) // empty')
+MCP_SERVER_URL=$(echo "$OUTPUTS" | jq -r '(.MCP_SERVER_URL.value // .mcP_SERVER_URL.value) // empty')
+APIM_GATEWAY_URL=$(echo "$OUTPUTS" | jq -r '(.APIM_GATEWAY_URL.value // .apiM_GATEWAY_URL.value) // empty')
+APPLICATIONINSIGHTS_CONNECTION_STRING=$(echo "$OUTPUTS" | jq -r '(.APPLICATIONINSIGHTS_CONNECTION_STRING.value // .applicationinsightS_CONNECTION_STRING.value) // empty')
+APPLICATIONINSIGHTS_INSTRUMENTATION_KEY=$(echo "$OUTPUTS" | jq -r '(.APPLICATIONINSIGHTS_INSTRUMENTATION_KEY.value // .applicationinsightS_INSTRUMENTATION_KEY.value) // empty')
 
 # For secure outputs, we need to get them separately
 # Note: Azure CLI doesn't return secure outputs via show command, we'll add placeholders

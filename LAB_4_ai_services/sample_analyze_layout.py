@@ -57,7 +57,7 @@ from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 def analyze_layout_from_local_file():
     # Set your endpoint from environment variables
     # For AAD authentication, only endpoint is needed
-    endpoint = os.environ["DOCUMENTINTELLIGENCE_ENDPOINT"]
+    endpoint = os.environ["FOUNDRY_ENDPOINT"]
     
     # Use Azure Active Directory authentication instead of key-based authentication
     credential = DefaultAzureCredential()

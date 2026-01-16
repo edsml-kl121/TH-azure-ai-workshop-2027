@@ -13,10 +13,13 @@ param searchServiceName string
   'storage_optimized_l1'
   'storage_optimized_l2'
 ])
-param searchServiceSku string = 'standard'
+param searchServiceSku string = 'basic'
 
 @description('Principal ID of the AI Foundry managed identity')
 param aiFoundryPrincipalId string
+
+@description('User Object ID for RBAC assignment (optional)')
+param userObjectId string = ''
 
 @description('Tags to apply to resources')
 param tags object = {}
@@ -65,6 +68,30 @@ resource aiFoundrySearchContributorRole 'Microsoft.Authorization/roleAssignments
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', searchIndexDataContributorRoleId)
     principalId: aiFoundryPrincipalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// Role: Search Index Data Contributor (for User to create/manage indexes)
+resource userSearchContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(userObjectId)) {
+  name: guid(searchService.id, userObjectId, searchIndexDataContributorRoleId)
+  scope: searchService
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', searchIndexDataContributorRoleId)
+    principalId: userObjectId
+    principalType: 'User'
+  }
+}
+
+// Role: Search Service Contributor (for User to manage search service)
+var searchServiceContributorRoleId = '7ca78c08-252a-4471-8644-bb5ff32d4ba0'
+
+resource userSearchServiceContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(userObjectId)) {
+  name: guid(searchService.id, userObjectId, searchServiceContributorRoleId)
+  scope: searchService
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', searchServiceContributorRoleId)
+    principalId: userObjectId
+    principalType: 'User'
   }
 }
 

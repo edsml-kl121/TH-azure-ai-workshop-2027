@@ -8,16 +8,16 @@ param location = 'eastus'
 // APIM configuration - REQUIRED: Update with your email
 param apimPublisherEmail = 'admin@contoso.com'
 param apimPublisherName = 'AI Workshop Team'
-param apimSku = 'Consumption'
+param apimSku = 'BasicV2'
 
 // Optional: Container App backend URL for MCP (leave empty if not configured)
 param mcpBackendUrl = ''
 
 // AI Search configuration
-param searchSku = 'standard'
+param searchSku = 'basic'
 
 // Model capacity configuration (TPM in thousands)
-param gptCapacity = 20
+param gptCapacity = 40
 param embeddingCapacity = 50
 
 // Optional: User Object ID for Owner role assignment

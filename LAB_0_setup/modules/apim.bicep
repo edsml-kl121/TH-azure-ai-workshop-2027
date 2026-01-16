@@ -15,10 +15,11 @@ param publisherName string
   'Consumption'
   'Developer'
   'Basic'
+  'BasicV2'
   'Standard'
   'Premium'
 ])
-param apimSku string = 'Consumption'
+param apimSku string = 'BasicV2'
 
 @description('Backend Container App URL for MCP server (leave empty if not configured yet)')
 param mcpBackendUrl string = ''
@@ -32,7 +33,7 @@ resource apimService 'Microsoft.ApiManagement/service@2023-09-01-preview' = {
   location: location
   sku: {
     name: apimSku
-    capacity: apimSku == 'Consumption' ? 0 : 1
+    capacity: apimSku == 'BasicV2' ? 0 : 1
   }
   identity: {
     type: 'SystemAssigned'

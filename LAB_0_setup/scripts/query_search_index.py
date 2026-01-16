@@ -11,7 +11,7 @@ load_dotenv(override=True)
 endpoint = os.environ["AZURE_SEARCH_ENDPOINT"]
 index_name = os.getenv("AZURE_SEARCH_INDEX_NAME", "health-index")
 azure_openai_endpoint = os.environ["FOUNDRY_ENDPOINT"]
-azure_openai_embedding_deployment = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
+azure_openai_embedding_deployment = os.getenv("AZURE_AI_EMBEDDING_DEPLOYMENT_NAME", "text-embedding-3-large")
 azure_openai_embedding_dimensions = int(os.getenv("AZURE_OPENAI_EMBEDDING_DIMENSIONS", 1024))
 
 # Setup credentials

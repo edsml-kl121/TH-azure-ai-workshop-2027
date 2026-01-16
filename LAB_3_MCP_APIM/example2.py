@@ -48,12 +48,12 @@ async def mcp_tools_on_run_level() -> None:
             ChatAgent(
                 chat_client=AzureAIAgentClient(credential=credential),
                 name="DocsAgent",
-                instructions="You are a helpful assistant that can help with microsoft documentation questions.",
+                instructions="You are a helpful assistant that can help pets document.",
             ) as agent,
         ):
             # First query
             # query1 = "Add a pet named Fido"
-            query1 = "What pets are there?"
+            query1 = "Get all pets result"
             print(f"User: {query1}")
             result1 = await agent.run(query1, tools=mcp_server)
             print(f"{agent.name}: {result1}\n")
