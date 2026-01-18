@@ -5,16 +5,12 @@ from random import randint
 from typing import Annotated
 
 from agent_framework import ChatAgent
-from agent_framework.azure import AzureAIAgentClient
 from azure.identity.aio import AzureCliCredential
 from pydantic import Field
 from agent_framework.azure import AzureAIClient
 import os
 
 from azure.ai.projects.aio import AIProjectClient
-from agent_framework.observability import get_tracer
-from opentelemetry.trace.span import format_trace_id
-from opentelemetry.trace import SpanKind
 
 """
 

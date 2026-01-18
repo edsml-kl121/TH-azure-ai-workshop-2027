@@ -1,16 +1,16 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import asyncio
+import os
 from typing import Annotated, cast
 
 from agent_framework import (
-    AgentResponse,
+    AgentRunResponse,
     AgentRunEvent,
     ChatAgent,
     ChatMessage,
-    HandoffAgentUserRequest,
+    HandoffUserInputRequest,
     HandoffBuilder,
-    HandoffSentEvent,
     RequestInfoEvent,
     WorkflowEvent,
     WorkflowOutputEvent,
@@ -20,6 +20,10 @@ from agent_framework import (
 )
 from agent_framework.azure import AzureOpenAIChatClient
 from azure.identity import AzureCliCredential
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 """Sample: Simple handoff workflow.
 
@@ -66,7 +70,7 @@ def create_agents(chat_client: AzureOpenAIChatClient) -> tuple[ChatAgent, ChatAg
         Tuple of (triage_agent, refund_agent, order_agent, return_agent)
     """
     # Triage agent: Acts as the frontline dispatcher
-    triage_agent = chat_client.as_agent(
+    triage_agent = chat_client.create_agent(
         instructions=(
             "You are frontline support triage. Route customer issues to the appropriate specialist agents "
             "based on the problem described."
@@ -75,7 +79,7 @@ def create_agents(chat_client: AzureOpenAIChatClient) -> tuple[ChatAgent, ChatAg
     )
 
     # Refund specialist: Handles refund requests
-    refund_agent = chat_client.as_agent(
+    refund_agent = chat_client.create_agent(
         instructions="You process refund requests.",
         name="refund_agent",
         # In a real application, an agent can have multiple tools; here we keep it simple
@@ -83,7 +87,7 @@ def create_agents(chat_client: AzureOpenAIChatClient) -> tuple[ChatAgent, ChatAg
     )
 
     # Order/shipping specialist: Resolves delivery issues
-    order_agent = chat_client.as_agent(
+    order_agent = chat_client.create_agent(
         instructions="You handle order and shipping inquiries.",
         name="order_agent",
         # In a real application, an agent can have multiple tools; here we keep it simple
@@ -91,7 +95,7 @@ def create_agents(chat_client: AzureOpenAIChatClient) -> tuple[ChatAgent, ChatAg
     )
 
     # Return specialist: Handles return requests
-    return_agent = chat_client.as_agent(
+    return_agent = chat_client.create_agent(
         instructions="You manage product return requests.",
         name="return_agent",
         # In a real application, an agent can have multiple tools; here we keep it simple
@@ -128,9 +132,9 @@ def _handle_events(events: list[WorkflowEvent]) -> list[RequestInfoEvent]:
                 speaker = message.author_name or message.role.value
                 print(f"- {speaker}: {message.text}")
 
-        # HandoffSentEvent: Indicates a handoff has been initiated
-        if isinstance(event, HandoffSentEvent):
-            print(f"\n[Handoff from {event.source} to {event.target} initiated.]")
+        # HandoffSentEvent: Indicates a handoff has been initiated (not available in current version)
+        # if isinstance(event, HandoffSentEvent):
+        #     print(f"\n[Handoff from {event.source} to {event.target} initiated.]")
 
         # WorkflowStatusEvent: Indicates workflow state changes
         if isinstance(event, WorkflowStatusEvent) and event.state in {
@@ -151,29 +155,29 @@ def _handle_events(events: list[WorkflowEvent]) -> list[RequestInfoEvent]:
 
         # RequestInfoEvent: Workflow is requesting user input
         elif isinstance(event, RequestInfoEvent):
-            if isinstance(event.data, HandoffAgentUserRequest):
-                _print_handoff_agent_user_request(event.data.agent_response)
+            if isinstance(event.data, HandoffUserInputRequest):
+                _print_handoff_agent_user_request(event.data.conversation)
             requests.append(event)
 
     return requests
 
 
-def _print_handoff_agent_user_request(response: AgentResponse) -> None:
+def _print_handoff_agent_user_request(conversation: list[ChatMessage]) -> None:
     """Display the agent's response messages when requesting user input.
 
     This will happen when an agent generates a response that doesn't trigger
     a handoff, i.e., the agent is asking the user for more information.
 
     Args:
-        response: The AgentResponse from the agent requesting user input
+        conversation: The conversation messages from the workflow
     """
-    if not response.messages:
-        raise RuntimeError("Cannot print agent responses: response has no messages.")
+    if not conversation:
+        raise RuntimeError("Cannot print agent responses: conversation is empty.")
 
     print("\n[Agent is requesting your input...]")
 
-    # Print agent responses
-    for message in response.messages:
+    # Print the last few agent messages
+    for message in conversation[-3:]:
         if not message.text:
             # Skip messages without text (e.g., tool calls)
             continue
@@ -195,14 +199,21 @@ async def main() -> None:
     replace the scripted_responses with actual user input collection.
     """
     # Initialize the Azure OpenAI chat client
-    chat_client = AzureOpenAIChatClient(credential=AzureCliCredential())
+    endpoint = os.environ.get("FOUNDRY_ENDPOINT")
+    deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
+    
+    chat_client = AzureOpenAIChatClient(
+        endpoint=endpoint,
+        deployment_name=deployment_name,
+        credential=AzureCliCredential()
+    )
 
     # Create all agents: triage + specialists
     triage, refund, order, support = create_agents(chat_client)
 
     # Build the handoff workflow
     # - participants: All agents that can participate in the workflow
-    # - with_start_agent: The triage agent is designated as the start agent, which means
+    # - set_coordinator: The triage agent is designated as the coordinator, which means
     #   it receives all user input first and orchestrates handoffs to specialists
     # - with_termination_condition: Custom logic to stop the request/response loop.
     #   Without this, the default behavior continues requesting user input until max_turns
@@ -213,7 +224,7 @@ async def main() -> None:
             name="customer_support_handoff",
             participants=[triage, refund, order, support],
         )
-        .with_start_agent(triage)
+        .set_coordinator(triage)
         .with_termination_condition(
             # Custom termination: Check if one of the agents has provided a closing message.
             # This looks for the last message containing "welcome", which indicates the
@@ -223,48 +234,51 @@ async def main() -> None:
         .build()
     )
 
-    # Scripted user responses for reproducible demo
-    # In a console application, replace this with:
-    #   user_input = input("Your response: ")
-    # or integrate with a UI/chat interface
-    scripted_responses = [
-        "My order 1234 arrived damaged and the packaging was destroyed. I'd like to return it.",
-        "Please also process a refund for order 1234.",
-        "Thanks for resolving this.",
-    ]
+    # # Scripted user responses for reproducible demo
+    # # In a console application, replace this with:
+    # #   user_input = input("Your response: ")
+    # # or integrate with a UI/chat interface
+    # scripted_responses = [
+    #     "My order 1234 arrived damaged and the packaging was destroyed. I'd like to return it.",
+    #     "Please also process a refund for order 1234.",
+    #     "Thanks for resolving this.",
+    # ]
 
-    # Start the workflow with the initial user message
-    # run_stream() returns an async iterator of WorkflowEvent
-    print("[Starting workflow with initial user message...]\n")
-    initial_message = "Hello, I need assistance with my recent purchase."
-    print(f"- User: {initial_message}")
-    workflow_result = await workflow.run(initial_message)
-    pending_requests = _handle_events(workflow_result)
+    # # Start the workflow with the initial user message
+    # # run_stream() returns an async iterator of WorkflowEvent
+    # print("[Starting workflow with initial user message...]\n")
+    # initial_message = "Hello, I need assistance with my recent purchase."
+    # print(f"- User: {initial_message}")
+    # workflow_result = await workflow.run(initial_message)
+    # pending_requests = _handle_events(workflow_result)
 
-    # Process the request/response cycle
-    # The workflow will continue requesting input until:
-    # 1. The termination condition is met, OR
-    # 2. We run out of scripted responses
-    while pending_requests:
-        if not scripted_responses:
-            # No more scripted responses; terminate the workflow
-            responses = {req.request_id: HandoffAgentUserRequest.terminate() for req in pending_requests}
-        else:
-            # Get the next scripted response
-            user_response = scripted_responses.pop(0)
-            print(f"\n- User: {user_response}")
+    # # Process the request/response cycle
+    # # The workflow will continue requesting input until:
+    # # 1. The termination condition is met, OR
+    # # 2. We run out of scripted responses
+    # while pending_requests:
+    #     if not scripted_responses:
+    #         # No more scripted responses; terminate the workflow
+    #         responses = {req.request_id: None for req in pending_requests}
+    #     else:
+    #         # Get the next scripted response
+    #         user_response = scripted_responses.pop(0)
+    #         print(f"\n- User: {user_response}")
 
-            # Send response(s) to all pending requests
-            # In this demo, there's typically one request per cycle, but the API supports multiple
-            responses = {
-                req.request_id: HandoffAgentUserRequest.create_response(user_response) for req in pending_requests
-            }
+    #         # Send response(s) to all pending requests
+    #         # In this demo, there's typically one request per cycle, but the API supports multiple
+    #         responses = {
+    #             req.request_id: user_response for req in pending_requests
+    #         }
 
-        # Send responses and get new events
-        # We use send_responses() to get events from the workflow, allowing us to
-        # display agent responses and handle new requests as they arrive
-        events = await workflow.send_responses(responses)
-        pending_requests = _handle_events(events)
+    #     # Send responses and get new events
+    #     # We use send_responses() to get events from the workflow, allowing us to
+    #     # display agent responses and handle new requests as they arrive
+    #     events = await workflow.send_responses(responses)
+    #     pending_requests = _handle_events(events)
+    
+    # Return workflow for optional DevUI usage
+    return workflow
 
     """
     Sample Output:
@@ -298,5 +312,29 @@ async def main() -> None:
     """  # noqa: E501
 
 
+def start_devui(workflow):
+    """Launch the Foundry weather agent in DevUI."""
+    import logging
+
+    from agent_framework.devui import serve
+
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logger = logging.getLogger(__name__)
+
+    logger.info("Starting Foundry Weather Agent")
+    logger.info("Available at: http://localhost:8090")
+    logger.info("Entity ID: agent_FoundryWeatherAgent")
+    logger.info("Note: Make sure 'az login' has been run for authentication")
+
+    # Launch server with the agent
+    serve(entities=[workflow], port=8000, auto_open=True)
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Run the main workflow demo
+    workflow = asyncio.run(main())
+    
+    # Optionally start DevUI server (uncomment if needed)
+    # Note: This will block and start a web server
+    start_devui(workflow)

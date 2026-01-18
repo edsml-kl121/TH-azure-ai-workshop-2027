@@ -8,10 +8,6 @@ from agent_framework.azure import AzureAIAgentClient
 from azure.identity.aio import AzureCliCredential
 from pydantic import Field
 
-from agent_framework.observability import get_tracer
-from opentelemetry.trace.span import format_trace_id
-from opentelemetry.trace import SpanKind
-
 """
 
 Azure AI Agent Basic Example
