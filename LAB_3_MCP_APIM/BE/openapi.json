@@ -11,7 +11,7 @@
   },
   "servers": [
     {
-      "url": "https://petstore-api.purpleriver-2b76d99e.eastus.azurecontainerapps.io/",
+      "url": "https://petstore-api.nicehill-4651481b.eastus.azurecontainerapps.io/",
       "description": "Production Container App (update with your actual URL)"
     },
     {

@@ -64,12 +64,12 @@ async def mcp_tools_on_agent_level() -> None:
             ),
         ) as agent,
     ):
-        # First query
-        query1 = "How to create an Azure storage account using az cli?"
-        print(f"User: {query1}")
-        result1 = await agent.run(query1)
-        print(f"{agent.name}: {result1}\n")
-        print("\n=======================================\n")
+        # # First query
+        # query1 = "How to create an Azure storage account using az cli?"
+        # print(f"User: {query1}")
+        # result1 = await agent.run(query1)
+        # print(f"{agent.name}: {result1}\n")
+        # print("\n=======================================\n")
         # Second query
         query2 = "What is Microsoft Agent Framework?"
         print(f"User: {query2}")

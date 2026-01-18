@@ -33,7 +33,7 @@ resource apimService 'Microsoft.ApiManagement/service@2023-09-01-preview' = {
   location: location
   sku: {
     name: apimSku
-    capacity: apimSku == 'BasicV2' ? 0 : 1
+    capacity: 1
   }
   identity: {
     type: 'SystemAssigned'

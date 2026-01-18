@@ -51,33 +51,6 @@ async def non_streaming_example() -> None:
         result = await agent.run(query)
         print(f"Agent: {result}\n")
 
-
-# async def streaming_example() -> None:
-#     """Example of streaming response (get results as they are generated)."""
-#     print("=== Streaming Response Example ===")
-
-#     # Since no Agent ID is provided, the agent will be automatically created
-#     # and deleted after getting a response
-#     # For authentication, run `az login` command in terminal or replace AzureCliCredential with preferred
-#     # authentication option.
-#     async with (
-#         AzureCliCredential() as credential,
-#         AzureAIAgentClient(credential=credential).create_agent(
-#             name="MewWeatherAgent",
-#             instructions="You are a helpful weather agent.",
-#             tools=get_weather,
-#             id="mew-weather-agent",
-#         ) as agent,
-#     ):
-#         query = "What's the weather like in Portland?"
-#         print(f"User: {query}")
-#         print("Agent: ", end="", flush=True)
-#         async for chunk in agent.run_stream(query):
-#             if chunk.text:
-#                 print(chunk.text, end="", flush=True)
-#         print("\n")
-
-
 async def main() -> None:
     print("=== Basic Azure AI Chat Client Agent Example ===")
 

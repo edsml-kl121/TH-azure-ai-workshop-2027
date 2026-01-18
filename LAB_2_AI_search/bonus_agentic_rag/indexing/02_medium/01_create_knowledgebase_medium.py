@@ -34,7 +34,7 @@ aoai_params = AzureOpenAIVectorizerParameters(
 
 knowledge_base = KnowledgeBase(
     name = "my-kb-medium",
-    description = "Knowledge base with LOW reasoning effort for faster responses with constrained LLM processing.",
+    description = "Knowledge base with HIGH reasoning effort for faster responses with constrained LLM processing.",
     retrieval_instructions = "Use the search index to answer questions.",
     answer_instructions = "Provide a concise answer based on the retrieved documents.",
     output_mode = KnowledgeRetrievalOutputMode.ANSWER_SYNTHESIS,

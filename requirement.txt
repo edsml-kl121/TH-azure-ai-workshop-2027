@@ -2,7 +2,9 @@ azure-ai-documentintelligence
 azure-identity
 python-dotenv
 requests
-agent-framework --pre
+agent-framework==1.0.0b260107
+agent-framework-azure-ai==1.0.0b260107
+agent-framework-azure-ai-search==1.0.0b260107
 azure-search-documents==11.7.0b2
 azure-ai-agents
 azure-ai-inference
