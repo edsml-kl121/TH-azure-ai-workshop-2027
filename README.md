@@ -1,9 +1,13 @@
+### pre-requisite
+
+You must be assigned with "Contributor" and "User Access Adminstrator role" inorder to complete this lab. Additionally, do note that there is a quota limit per instance. If for some reason the quota is reached please choose an alternative region from eastus to other regions such as eastus2, etc. Change this inside parameters.bicepparam & deploy_api.sh file
+
 ### LAB 0
 
-Please locate the `LAB_0_setup` folder. Then inside the `deploy.sh` file rename the resource group in line 25 e.g. mew3-azure-ai-workshop-rg to a name you prefer. Then, run the `deploy.sh` script
+Please locate the `LAB_0_setup` folder. Then inside the `deploy_api.sh` file rename the resource group in line 25 e.g. mew3-azure-ai-workshop-rg to a name you prefer. Then, run the `deploy_api.sh` script
 
 ```
-bash deploy.sh
+bash deploy_api.sh
 ```
 
 Meanwhile, please locate to the root directory and create a virtual environment via.

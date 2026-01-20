@@ -70,7 +70,7 @@ resource gpt4Deployment 'Microsoft.CognitiveServices/accounts/deployments@2025-0
   parent: aiFoundry
   name: gptDeploymentName
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: gptCapacity
   }
   properties: {
@@ -92,7 +92,7 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   parent: aiFoundry
   name: embeddingDeploymentName
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: embeddingCapacity
   }
   properties: {

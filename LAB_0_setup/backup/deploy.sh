@@ -22,7 +22,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RESOURCE_GROUP_NAME="${RESOURCE_GROUP_NAME:-mew3-azure-ai-workshop-rg}"
+RESOURCE_GROUP_NAME="${RESOURCE_GROUP_NAME:-mew4-azure-ai-workshop-rg}"
 LOCATION="${LOCATION:-eastus}"
 DEPLOYMENT_NAME="ai-workshop-deployment-$(date +%Y%m%d-%H%M%S)"
 
@@ -114,15 +114,149 @@ echo -e "${YELLOW}Deploying Azure infrastructure...${NC}"
 echo -e "${BLUE}This may take 10-15 minutes. Please be patient...${NC}"
 echo ""
 
-az deployment group create \
-    --name "$DEPLOYMENT_NAME" \
-    --resource-group "$RESOURCE_GROUP_NAME" \
-    --template-file "$SCRIPT_DIR/main.bicep" \
-    --parameters "$PARAMS_FILE" \
-    --parameters userObjectId="$USER_OBJECT_ID" \
-    --output table
+# Get subscription ID
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
-if [ $? -eq 0 ]; then
+# Compile Bicep to ARM JSON (avoids some CLI issues)
+echo -e "${BLUE}Compiling Bicep template...${NC}"
+az bicep build --file "$SCRIPT_DIR/main.bicep" --outfile "$SCRIPT_DIR/main-compiled.json" 2>/dev/null
+
+# Parse parameters from bicepparam file and create deployment payload
+echo -e "${BLUE}Preparing deployment payload from parameters.bicepparam...${NC}"
+python3 << PYTHON
+import json
+import re
+
+# Load the compiled template
+with open('$SCRIPT_DIR/main-compiled.json', 'r') as f:
+    template = json.load(f)
+
+# Parse bicepparam file
+params = {}
+with open('$PARAMS_FILE', 'r') as f:
+    content = f.read()
+    
+    # Match param name = value patterns
+    # Handles strings, numbers, and empty strings
+    pattern = r"param\s+(\w+)\s*=\s*(?:'([^']*)'|\"([^\"]*)\"|(\d+))"
+    matches = re.findall(pattern, content)
+    
+    for match in matches:
+        name = match[0]
+        # Value is in one of the capture groups
+        if match[1]:  # single quoted string
+            value = match[1]
+        elif match[2]:  # double quoted string
+            value = match[2]
+        elif match[3]:  # number
+            value = int(match[3])
+        else:
+            value = ""
+        params[name] = value
+
+# Override userObjectId with the one from the script
+params['userObjectId'] = '$USER_OBJECT_ID'
+
+# Override location if set via environment variable
+if '$LOCATION':
+    params['location'] = '$LOCATION'
+
+# Build parameters object for ARM deployment
+arm_params = {}
+for key, value in params.items():
+    arm_params[key] = {"value": value}
+
+# Create the deployment payload
+payload = {
+    "properties": {
+        "mode": "Incremental",
+        "template": template,
+        "parameters": arm_params
+    }
+}
+
+with open('$SCRIPT_DIR/deploy-payload.json', 'w') as f:
+    json.dump(payload, f, indent=2)
+
+print(f"Parsed {len(params)} parameters from bicepparam file")
+PYTHON
+
+# Deploy using REST API (bypasses CLI stream consumption bug)
+echo -e "${BLUE}Starting deployment via REST API...${NC}"
+DEPLOY_RESULT_FILE="$SCRIPT_DIR/deploy-result.json"
+
+# Use curl directly to avoid Azure CLI stream issues
+ACCESS_TOKEN=$(az account get-access-token --query accessToken -o tsv)
+HTTP_CODE=$(curl -s -w "%{http_code}" -o "$DEPLOY_RESULT_FILE" \
+    -X PUT \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -H "Content-Type: application/json" \
+    "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourcegroups/${RESOURCE_GROUP_NAME}/providers/Microsoft.Resources/deployments/${DEPLOYMENT_NAME}?api-version=2021-04-01" \
+    -d @"$SCRIPT_DIR/deploy-payload.json")
+
+echo -e "${BLUE}HTTP Response Code: $HTTP_CODE${NC}"
+
+# Check HTTP response code and result
+if [ "$HTTP_CODE" -ge 400 ] || grep -q '"error"' "$DEPLOY_RESULT_FILE" 2>/dev/null; then
+    echo -e "${RED}╔════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║            Deployment failed! ✗                        ║${NC}"
+    echo -e "${RED}╚════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${RED}Error details:${NC}"
+    python3 -m json.tool "$DEPLOY_RESULT_FILE" 2>/dev/null || cat "$DEPLOY_RESULT_FILE"
+    # Cleanup temp files
+    rm -f "$SCRIPT_DIR/main-compiled.json" "$SCRIPT_DIR/deploy-payload.json" "$DEPLOY_RESULT_FILE"
+    exit 1
+fi
+
+# Deployment started - now poll for completion
+echo -e "${GREEN}✓ Deployment started${NC}"
+echo -e "${BLUE}Monitoring deployment progress...${NC}"
+
+DEPLOY_EXIT_CODE=0
+while true; do
+    sleep 15
+    
+    STATUS=$(az deployment group show \
+        --name "$DEPLOYMENT_NAME" \
+        --resource-group "$RESOURCE_GROUP_NAME" \
+        --query "properties.provisioningState" -o tsv 2>/dev/null)
+    
+    case "$STATUS" in
+        "Succeeded")
+            echo -e "${GREEN}✓ Deployment succeeded${NC}"
+            DEPLOY_EXIT_CODE=0
+            break
+            ;;
+        "Failed")
+            echo -e "${RED}✗ Deployment failed${NC}"
+            ERROR_MSG=$(az deployment group show \
+                --name "$DEPLOYMENT_NAME" \
+                --resource-group "$RESOURCE_GROUP_NAME" \
+                --query "properties.error" -o json 2>/dev/null)
+            echo -e "${RED}Error details:${NC}"
+            echo "$ERROR_MSG" | python3 -m json.tool 2>/dev/null || echo "$ERROR_MSG"
+            DEPLOY_EXIT_CODE=1
+            break
+            ;;
+        "Canceled")
+            echo -e "${RED}✗ Deployment was canceled${NC}"
+            DEPLOY_EXIT_CODE=1
+            break
+            ;;
+        "Running"|"Accepted")
+            echo -e "${BLUE}⏳ Status: $STATUS - deploying resources...${NC}"
+            ;;
+        *)
+            echo -e "${BLUE}⏳ Status: ${STATUS:-Initializing}...${NC}"
+            ;;
+    esac
+done
+
+# Cleanup temp files
+rm -f "$SCRIPT_DIR/main-compiled.json" "$SCRIPT_DIR/deploy-payload.json" "$DEPLOY_RESULT_FILE"
+
+if [ $DEPLOY_EXIT_CODE -eq 0 ]; then
     echo ""
     echo -e "${GREEN}╔════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║          Deployment completed successfully! ✓          ║${NC}"

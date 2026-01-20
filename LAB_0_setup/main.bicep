@@ -130,13 +130,14 @@ module apim 'modules/apim.bicep' = {
   }
 }
 
-// Assign Owner role to user on the resource group (if userObjectId provided)
-var ownerRoleId = '8e3af657-a8ff-443c-a75c-2fe8c4bcb635'
+// Assign Contributor role to user on the resource group (if userObjectId provided)
+// Note: Owner role requires elevated permissions to assign. Using Contributor instead.
+var contributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
 
-resource userOwnerAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(userObjectId)) {
-  name: guid(resourceGroup().id, userObjectId, ownerRoleId)
+resource userContributorAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(userObjectId)) {
+  name: guid(resourceGroup().id, userObjectId, contributorRoleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', ownerRoleId)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributorRoleId)
     principalId: userObjectId
     principalType: 'User'
   }
