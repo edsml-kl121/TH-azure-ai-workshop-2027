@@ -6,6 +6,9 @@ import os
 from agent_framework import ChatMessage, Role, SequentialBuilder, WorkflowOutputEvent
 from agent_framework.azure import AzureOpenAIChatClient
 from azure.identity import AzureCliCredential
+from dotenv import load_dotenv
+
+load_dotenv()
 
 """
 Sample: Sequential workflow (agent-focused API) with shared conversation context
