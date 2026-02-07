@@ -6,6 +6,8 @@ import os
 from agent_framework import ChatAgent
 from agent_framework.azure import AzureAIAgentClient, AzureAISearchContextProvider
 from azure.identity.aio import AzureCliCredential
+from azure.search.documents.aio import SearchClient
+from azure.core.credentials import AzureKeyCredential
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -14,30 +16,27 @@ load_dotenv()
 """
 This sample demonstrates how to use Azure AI Search with semantic mode for RAG
 (Retrieval Augmented Generation) with Azure AI agents.
-
-**Semantic mode** is the recommended default mode:
-- Fast hybrid search combining vector and keyword search
-- Uses semantic ranking for improved relevance
-- Returns raw search results as context
-- Best for most RAG use cases
-
-Prerequisites:
-1. An Azure AI Search service with a search index
-2. An Azure AI Foundry project with a model deployment
-3. Set the following environment variables:
-   - AZURE_SEARCH_ENDPOINT: Your Azure AI Search endpoint
-   - AZURE_SEARCH_API_KEY: (Optional) Your search API key - if not provided, uses DefaultAzureCredential for Entra ID
-   - AZURE_SEARCH_INDEX_NAME: Your search index name
-   - AZURE_AI_PROJECT_ENDPOINT: Your Azure AI Foundry project endpoint
-   - AZURE_AI_MODEL_DEPLOYMENT_NAME: Your model deployment name (e.g., "gpt-4o")
 """
 
 # Sample queries to demonstrate RAG
 USER_INPUTS = [
-    "แผนความคุ้มครองสูงสุด วงเงินค่ารักษาต่อปี คืออะไร?",
-    # "Summarize the main topics from the documents",
-    # "Find specific details about the content",
+    "แผนความคุ้มครองสูงสุด วงเงินค่ารักษาต่อปี คือเท่าไหร่? และ ค่าห้้องพักราคาเท่าไหร่?",
 ]
+
+
+async def search_directly(search_client: SearchClient, query: str, top_k: int = 3):
+    """Search Azure AI Search directly and return results."""
+    results = []
+    # Await the search call first, then iterate over results
+    search_response = await search_client.search(
+        search_text=query,
+        top=top_k,
+        query_type="semantic",
+        semantic_configuration_name="my-semantic-config",  # Use your actual config name
+    )
+    async for result in search_response:
+        results.append(result)
+    return results
 
 
 async def main() -> None:
@@ -50,20 +49,35 @@ async def main() -> None:
     project_endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
     model_deployment = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o")
 
-    # Create Azure AI Search context provider with semantic mode (recommended, fast)
+    # Set up credential for search
+    if search_key:
+        search_credential = AzureKeyCredential(search_key)
+    else:
+        search_credential = AzureCliCredential()
+
+    # Create Azure AI Search context provider with semantic mode
     print("Using SEMANTIC mode (hybrid search + semantic ranking, fast)\n")
     search_provider = AzureAISearchContextProvider(
         endpoint=search_endpoint,
         index_name=index_name,
-        api_key=search_key,  # Use api_key for API key auth, or credential for managed identity
+        api_key=search_key,
         credential=AzureCliCredential() if not search_key else None,
-        mode="semantic",  # Default mode
-        top_k=3,  # Retrieve top 3 most relevant documents
+        mode="semantic",
+        semantic_configuration_name="my-semantic-config",  # Must match your index's semantic config
+        top_k=3,
+    )
+
+    # Create a direct search client to view results
+    search_client = SearchClient(
+        endpoint=search_endpoint,
+        index_name=index_name,
+        credential=search_credential,
     )
 
     # Create agent with search context provider
     async with (
         search_provider,
+        search_client,
         AzureAIAgentClient(
             project_endpoint=project_endpoint,
             model_deployment_name=model_deployment,
@@ -83,10 +97,46 @@ async def main() -> None:
 
         for user_input in USER_INPUTS:
             print(f"User: {user_input}")
+            
+            # Get and print search results directly from Azure Search
+            print("\n--- Search Results ---")
+            context_text = ""
+            try:
+                search_results = await search_directly(search_client, user_input, top_k=3)
+                
+                for i, result in enumerate(search_results, 1):
+                    print(f"\n[Result {i}]")
+                    # Print available fields - adjust based on your index schema
+                    if 'content' in result:
+                        text = result['content'][:300] + "..." if len(result.get('content', '')) > 300 else result.get('content', '')
+                        print(f"  Content: {text}")
+                        context_text += f"\n[Document {i}]: {result['content']}"
+                    if 'title' in result:
+                        print(f"  Title: {result['title']}")
+                        context_text += f" (Title: {result['title']})"
+                    if '@search.score' in result:
+                        print(f"  Score: {result['@search.score']:.4f}")
+                    if '@search.reranker_score' in result:
+                        print(f"  Reranker Score: {result['@search.reranker_score']:.4f}")
+            except Exception as e:
+                print(f"  Error fetching search results: {e}")
+            print("\n--- End Search Results ---\n")
+            
+            # Build the augmented prompt with context
+            augmented_prompt = f"""Use the following context from the knowledge base to answer the question. 
+Answer based ONLY on the provided context. If the context contains the answer, provide it directly.
+
+Context:
+{context_text}
+
+Question: {user_input}
+
+Answer:"""
+            
             print("Agent: ", end="", flush=True)
 
-            # Stream response
-            async for chunk in agent.run_stream(user_input):
+            # Stream response with augmented prompt
+            async for chunk in agent.run_stream(augmented_prompt):
                 if chunk.text:
                     print(chunk.text, end="", flush=True)
 
