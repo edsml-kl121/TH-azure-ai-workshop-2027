@@ -11,3 +11,4 @@ azure-ai-inference
 azure-monitor-opentelemetry
 agent-framework-devui
 streamlit
+azure-ai-evaluation
