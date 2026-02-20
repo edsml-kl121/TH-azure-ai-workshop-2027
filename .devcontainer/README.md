@@ -110,7 +110,7 @@ source venv/bin/activate
 ### Update Dependencies
 
 ```bash
-pip install -r requirement.txt
+pip install .
 ```
 
 ### Rebuild Container
@@ -144,7 +144,7 @@ Wait for post-create script to finish. Check the terminal output.
 Activate virtual environment:
 ```bash
 source venv/bin/activate
-pip install -r requirement.txt
+pip install .
 ```
 
 ### Azure Login Issues

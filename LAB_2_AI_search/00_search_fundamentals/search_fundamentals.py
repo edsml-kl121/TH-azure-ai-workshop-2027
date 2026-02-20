@@ -89,7 +89,7 @@ from azure.search.documents.models import (
 #    Pure vector similarity search on contentVector only.
 # ============================================================
 query = "วงเงินค่ารักษาพยาบาลต่อปีคือเท่าไหร่?"
-vector_query = VectorizableTextQuery(text=query, k_nearest_neighbors=50, fields="contentVector")
+vector_query = VectorizableTextQuery(text=query, k=50, fields="contentVector")
 
 results = search_client.search(
     search_text=None,
@@ -107,7 +107,7 @@ print_results(results)
 #    Combines full-text BM25 scoring with vector similarity.
 # ============================================================
 query = "งบตัดแว่นสายตาให้วงเงินเท่าไหร่?"
-vector_query = VectorizableTextQuery(text=query, k_nearest_neighbors=50, fields="contentVector")
+vector_query = VectorizableTextQuery(text=query, k=50, fields="contentVector")
 
 results = search_client.search(
     search_text=query,
@@ -125,13 +125,13 @@ print_results(results)
 #    Pre-filter by category before vector ranking.
 # ============================================================
 query = "บริษัทมีฉีดวัคซีนไข้หวัดใหญ่ให้ฟรีหรือไม่?"
-vector_query = VectorizableTextQuery(text=query, k_nearest_neighbors=50, fields="contentVector")
+vector_query = VectorizableTextQuery(text=query, k=50, fields="contentVector")
 
 results = search_client.search(
     search_text=query,
     vector_queries=[vector_query],
     vector_filter_mode=VectorFilterMode.PRE_FILTER,
-    filter="category eq 'สวัสดิการสุขภาพ'",
+    filter="category eq 'Prevention'",
     select=["title", "content", "category"],
     top=3
 )
@@ -146,7 +146,7 @@ print_results(results)
 #    extracts captions & answers.
 # ============================================================
 query = "มีบริการปรึกษาจิตแพทย์ฟรีหรือไม่?"
-vector_query = VectorizableTextQuery(text=query, k_nearest_neighbors=50, fields="contentVector")
+vector_query = VectorizableTextQuery(text=query, k=50, fields="contentVector")
 
 results = search_client.search(
     search_text=query,
@@ -169,8 +169,8 @@ print_results(results)
 #    with independent vector queries per field.
 # ============================================================
 query = "วงเงินคุ้มครองกรณีเสียชีวิตจากอุบัติเหตุคือเท่าไหร่?"
-vector_query_title = VectorizableTextQuery(text=query, k_nearest_neighbors=50, fields="titleVector")
-vector_query_content = VectorizableTextQuery(text=query, k_nearest_neighbors=50, fields="contentVector")
+vector_query_title = VectorizableTextQuery(text=query, k=50, fields="titleVector")
+vector_query_content = VectorizableTextQuery(text=query, k=50, fields="contentVector")
 
 results = search_client.search(
     search_text=query,

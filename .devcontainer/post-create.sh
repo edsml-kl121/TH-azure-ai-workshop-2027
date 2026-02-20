@@ -32,8 +32,8 @@ source venv/bin/activate
 
 # Install Python dependencies
 echo "📚 Installing Python dependencies..."
-if [ -f "requirement.txt" ]; then
-    pip install -r requirement.txt
+if [ -f "pyproject.toml" ]; then
+    pip install .
 fi
 
 # Make deployment scripts executable
