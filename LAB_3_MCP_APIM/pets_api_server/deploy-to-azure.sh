@@ -2,8 +2,8 @@
 set -e
 
 # Configuration
-RESOURCE_GROUP="mew3-azure-ai-workshop-rg"
-LOCATION="eastus"
+RESOURCE_GROUP="mew11-azure-ai-workshop-rg"
+LOCATION="swedencentral"
 ACR_NAME="aiworkshopacr$(date +%s)"  # Unique name
 CONTAINER_APP_ENV="petstore-env"
 CONTAINER_APP_NAME="petstore-api"

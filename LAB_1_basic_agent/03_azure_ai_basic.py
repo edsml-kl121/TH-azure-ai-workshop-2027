@@ -6,7 +6,13 @@ from typing import Annotated
 
 from agent_framework.azure import AzureAIAgentClient
 from azure.identity.aio import AzureCliCredential
+from agent_framework.azure import AzureAIClient
+from agent_framework import ChatAgent
+from azure.ai.projects.aio import AIProjectClient
+import os
 from pydantic import Field
+from dotenv import load_dotenv
+load_dotenv()
 
 """
 
@@ -35,16 +41,27 @@ async def non_streaming_example() -> None:
     # authentication option.
     async with (
         AzureCliCredential() as credential,
-        AzureAIAgentClient(credential=credential).as_agent(
-            name="MewWeatherAgent",
-            instructions="You are a helpful weather agent.",
-            tools=get_weather,
-            id="mew-weather-agent",
-        ) as agent,
+        AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
+        AzureAIClient(project_client=project_client) as client,
     ):
+        # agent = AzureAIAgentClient(credential=credential).as_agent(
+        #     name="EasyWeatherAgent",
+        #     instructions="You are a helpful weather agent.",
+        #     tools=get_weather,
+        #     id="easy-weather-agent",
+        # )
+
+        agent = ChatAgent(
+            chat_client=client,
+            tools=get_weather,
+            name="EasyWeatherAgent",
+            instructions="You are a weather assistant.",
+            id="easy-weather-agent",
+        )
+        thread = agent.get_new_thread()
         query = "What's the weather like in Seattle?"
         print(f"User: {query}")
-        result = await agent.run(query)
+        result = await agent.run(query, thread=thread)
         print(f"Agent: {result}\n")
 
 async def main() -> None:

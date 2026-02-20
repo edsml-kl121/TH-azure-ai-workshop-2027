@@ -1,0 +1,16 @@
+1. Please create an Agent in Foundry Portal Called "Insurance Agent" and choose "gpt-4o-mini"
+2. Please connect to the Foundry IQ Knowledge base we have created earlier
+
+![alt text](../../assets/image.png)
+
+3. Connect via. API Key
+
+![alt text](../../assets/image-1.png)
+
+4. Choose the "my-kb-minimal" base and ask "วงเงินค่ารักษาพยาบาลต่อปีคือเท่าไหร่?"
+
+![alt text](../../assets/image-2.png)
+
+5. Observe the tracing.
+
+![alt text](../../assets/image-3.png)

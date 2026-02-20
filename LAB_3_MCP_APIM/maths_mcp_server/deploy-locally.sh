@@ -1,0 +1,1 @@
+python server.py --transport streamable-http --port 8001

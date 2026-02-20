@@ -88,6 +88,8 @@ D) Update the environment variables with the corresponding Key values, then plea
 python example2.py
 ```
 
+Note: https://github.com/microsoft/agent-framework/blob/main/python/samples/getting_started/mcp/mcp_api_key_auth.py
+
 
 ### LAB 4
 ```

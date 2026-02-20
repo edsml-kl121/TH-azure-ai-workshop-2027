@@ -11,7 +11,8 @@ from agent_framework.azure import AzureAIClient
 import os
 
 from azure.ai.projects.aio import AIProjectClient
-
+from dotenv import load_dotenv
+load_dotenv()
 """
 
 Azure AI Agent Basic Example

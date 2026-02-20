@@ -3,8 +3,13 @@
 import asyncio
 
 from agent_framework import ChatAgent, MCPStreamableHTTPTool
-from agent_framework.azure import AzureAIAgentClient
+from agent_framework.azure import AzureAIClient
 from azure.identity.aio import AzureCliCredential
+from azure.ai.projects.aio import AIProjectClient
+import os
+
+from dotenv import load_dotenv
+load_dotenv()
 
 """
 Azure AI Agent with Local MCP Example
@@ -23,12 +28,14 @@ servers, showing both agent-level and run-level tool configuration patterns.
 #     # and pass the tools to the run method.
 #     async with (
 #         AzureCliCredential() as credential,
+#         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
+#         AzureAIClient(project_client=project_client) as client,
 #         MCPStreamableHTTPTool(
 #             name="Microsoft Learn MCP",
 #             url="https://learn.microsoft.com/api/mcp",
 #         ) as mcp_server,
 #         ChatAgent(
-#             chat_client=AzureAIAgentClient(credential=credential),
+#             chat_client=client,
 #             name="DocsAgent",
 #             instructions="You are a helpful assistant that can help with microsoft documentation questions.",
 #         ) as agent,
@@ -55,12 +62,19 @@ async def mcp_tools_on_agent_level() -> None:
     # The agent will connect to the MCP server through its context manager.
     async with (
         AzureCliCredential() as credential,
-        AzureAIAgentClient(credential=credential).create_agent(
-            name="DocsAgent",
+        AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
+        AzureAIClient(project_client=project_client) as client,
+        ChatAgent(
+            chat_client=client,
+            name="MathAgent",
+            id="MathAgent",
             instructions="You are a helpful assistant that can help with microsoft documentation questions.",
             tools=MCPStreamableHTTPTool(  # Tools defined at agent creation
-                name="Microsoft Learn MCP",
-                url="https://learn.microsoft.com/api/mcp",
+                name="Maths MCP",
+                # url="http://127.0.0.1:8001/mcp", <-- replace with local URL for exercise 1
+                # url="https://maths-mcp-server.delightfulcoast-38fb42fa.swedencentral.azurecontainerapps.io/mcp", <-- replace with Container apps URL for exercise 2
+                url="https://aiworkshop-apim-rmsgmwk472oxi.azure-api.net/maths/mcp", # <-- replace with APIM MCP URL for exercise 2
+                load_prompts=False,  # Disable prompt loading
             ),
         ) as agent,
     ):
@@ -71,7 +85,7 @@ async def mcp_tools_on_agent_level() -> None:
         # print(f"{agent.name}: {result1}\n")
         # print("\n=======================================\n")
         # Second query
-        query2 = "What is Microsoft Agent Framework?"
+        query2 = "Whats 2+2"
         print(f"User: {query2}")
         result2 = await agent.run(query2)
         print(f"{agent.name}: {result2}\n")
