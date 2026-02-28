@@ -3,3 +3,4 @@
 .env_backup
 **/venv
 **.egg-info
+venv.backup/

@@ -85,9 +85,9 @@ async def main():
             agent = ChatAgent(
                 chat_client=client,
                 tools=get_weather,
-                name="WeatherTracingAgent2",
+                name="WeatherTracing25Feb",
                 instructions="You are a weather assistant.",
-                id="weather-tracing-agent2",
+                id="weather-tracing-25Feb",
             )
             for question in questions:
                 # Create a new thread for each question to avoid tool call conflicts

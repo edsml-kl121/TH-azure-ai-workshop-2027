@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Reusable, fully pinned Python setup for TH Azure AI Workshop 2027"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
+package-mode = false
 dependencies = [
   "a2a-sdk==0.3.22",
   "ag-ui-protocol==0.1.10",
