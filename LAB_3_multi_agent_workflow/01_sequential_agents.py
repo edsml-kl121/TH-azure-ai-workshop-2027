@@ -54,11 +54,11 @@ async def main() -> None:
     )
 
     # 2) Build sequential workflow: writer -> reviewer
-    workflow = SequentialBuilder().participants([writer, reviewer]).build()
+    workflow = SequentialBuilder(participants=[writer, reviewer]).build()
 
     # 3) Run and collect outputs
     outputs: list[list[Message]] = []
-    async for event in workflow.run_stream("Write a tagline for a budget-friendly eBike."):
+    async for event in workflow.run("Write a tagline for a budget-friendly eBike.", stream=True):
         if event.type == "output":
             outputs.append(cast(list[Message], event.data))
 

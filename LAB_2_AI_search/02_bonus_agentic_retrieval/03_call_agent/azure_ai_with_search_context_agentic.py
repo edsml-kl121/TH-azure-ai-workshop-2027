@@ -44,7 +44,7 @@ async def main() -> None:
         ) as project_client:
             
             # Create AI client (not a context manager)
-            client = FoundryChatClient(project_client=project_client)
+            client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
             
             # Build search provider kwargs
             kwargs = {

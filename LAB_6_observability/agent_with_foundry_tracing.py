@@ -53,8 +53,8 @@ async def main():
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        FoundryChatClient(project_client=project_client) as client,
     ):
+        client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
         # This will enable tracing and configure the application to send telemetry data to the
         # Application Insights instance attached to the Azure AI project.
         # This will override any existing configuration.
@@ -90,11 +90,9 @@ async def main():
                 id="weather-tracing-25Feb",
             )
             for question in questions:
-                # Create a new thread for each question to avoid tool call conflicts
-                thread = agent.get_new_thread()
                 print(f"\nUser: {question}")
                 print(f"{agent.name}: ", end="", flush=True)
-                result = await agent.run(question, thread=thread)
+                result = await agent.run(question)
                 print(result)
 
 

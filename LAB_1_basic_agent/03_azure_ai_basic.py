@@ -41,8 +41,8 @@ async def non_streaming_example() -> None:
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        FoundryChatClient(project_client=project_client) as client,
     ):
+        client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
         # agent = FoundryChatClient(credential=credential).as_agent(
         #     name="EasyWeatherAgent",
         #     instructions="You are a helpful weather agent.",
@@ -57,10 +57,10 @@ async def non_streaming_example() -> None:
             instructions="You are a weather assistant.",
             id="easy-weather-agent",
         )
-        thread = agent.get_new_thread()
+        thread = None
         query = "What's the weather like in Seattle?"
         print(f"User: {query}")
-        result = await agent.run(query, thread=thread)
+        result = await agent.run(query)
         print(f"Agent: {result}\n")
 
 async def main() -> None:

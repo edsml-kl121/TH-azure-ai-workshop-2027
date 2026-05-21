@@ -42,8 +42,8 @@ async def main():
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        FoundryChatClient(project_client=project_client) as client,
     ):
+        client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
         # This will enable tracing and configure the application to send telemetry data to the
         # Application Insights instance attached to the Azure AI project.
         # This will override any existing configuration.
@@ -62,13 +62,12 @@ async def main():
                 instructions="You are a weather assistant.",
                 id="edvan-weather-agent",
             )
-            thread = agent.get_new_thread()
+            thread = None
             for question in questions:
                 print(f"\nUser: {question}")
                 print(f"{agent.name}: ", end="")
                 async for update in agent.run_stream(
                     question,
-                    thread=thread,
                 ):
                     if update.text:
                         print(update.text, end="")

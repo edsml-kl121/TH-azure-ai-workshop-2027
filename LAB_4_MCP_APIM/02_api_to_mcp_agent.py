@@ -42,7 +42,7 @@ async def api_key_auth_example() -> None:
     }
         # AzureCliCredential() as credential,
         # AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        # FoundryChatClient(project_client=project_client) as client,
+        # FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]) as client,
         
     # print(mcp_server_url)
     # print(api_key)
@@ -53,27 +53,29 @@ async def api_key_auth_example() -> None:
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        FoundryChatClient(project_client=project_client) as client,
-        MCPStreamableHTTPTool(
-            name="MCP tool",
-            description="MCP tool description",
-            url=mcp_server_url,
-            http_client=http_client,  # Pass HTTP client with authentication headers
-            load_prompts=False,  # Disable prompt loading
-        ) as mcp_tool,
-        Agent(
-            client=client,
-            name="McpAgent",
-            id="McpAgent",
-            instructions="You are a helpful assistant.",
-            tools=mcp_tool,
-        ) as agent,
     ):
-        # query = "What tools are available to you?"
-        query = "List all pets"
-        print(f"User: {query}")
-        result = await agent.run(query)
-        print(f"Agent: {result.text}")
+        client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
+        async with (
+            MCPStreamableHTTPTool(
+                name="MCP tool",
+                description="MCP tool description",
+                url=mcp_server_url,
+                http_client=http_client,  # Pass HTTP client with authentication headers
+                load_prompts=False,  # Disable prompt loading
+            ) as mcp_tool,
+            Agent(
+                client=client,
+                name="McpAgent",
+                id="McpAgent",
+                instructions="You are a helpful assistant.",
+                tools=mcp_tool,
+            ) as agent,
+        ):
+                # query = "What tools are available to you?"
+                query = "List all pets"
+                print(f"User: {query}")
+                result = await agent.run(query)
+                print(f"Agent: {result.text}")
 
 
 if __name__ == "__main__":

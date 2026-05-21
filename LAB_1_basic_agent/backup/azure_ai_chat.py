@@ -37,7 +37,7 @@ async def streaming_example() -> None:
 
     credential = AzureCliCredential()
     project_client = AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential)
-    client = FoundryChatClient(project_client=project_client)
+    client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
 
     questions = ["What's the weather in Seattle?", "and in New York, which is better?"]
     agent = Agent(
@@ -47,13 +47,11 @@ async def streaming_example() -> None:
         instructions="You are a weather assistant.",
         id="mew-weather-agent",
     )
-    thread = agent.get_new_thread()
     for question in questions:
         print(f"\nUser: {question}")
         print(f"{agent.name}: ", end="")
         async for update in agent.run_stream(
             question,
-            thread=thread,
         ):
             if update.text:
                 print(update.text, end="")

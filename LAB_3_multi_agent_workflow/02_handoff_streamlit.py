@@ -306,7 +306,7 @@ async def run_workflow_step(workflow, message: str, pending_requests: list):
             req.request_id: HandoffAgentUserRequest.create_response(message) 
             for req in pending_requests
         }
-        events = await workflow.send_responses(responses)
+        events = await workflow.run(responses=responses)
     
     return process_events(events)
 
