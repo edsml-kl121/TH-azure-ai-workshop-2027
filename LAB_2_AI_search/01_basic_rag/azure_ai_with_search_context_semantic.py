@@ -3,8 +3,9 @@
 import asyncio
 import os
 
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureAIAgentClient, AzureAISearchContextProvider
+from agent_framework import Agent
+from agent_framework.foundry import FoundryChatClient
+from agent_framework.azure import AzureAISearchContextProvider
 from azure.identity.aio import AzureCliCredential
 from azure.search.documents.aio import SearchClient
 from azure.core.credentials import AzureKeyCredential
@@ -78,13 +79,13 @@ async def main() -> None:
     async with (
         search_provider,
         search_client,
-        AzureAIAgentClient(
+        FoundryChatClient(
             project_endpoint=project_endpoint,
             model_deployment_name=model_deployment,
             credential=AzureCliCredential(),
         ) as client,
-        ChatAgent(
-            chat_client=client,
+        Agent(
+            client=client,
             name="SearchAgent",
             instructions=(
                 "You are a helpful assistant. Use the provided context from the "

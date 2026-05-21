@@ -6,8 +6,8 @@ from random import randint
 from typing import Annotated
 
 import dotenv
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureAIClient
+from agent_framework import Agent
+from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import get_tracer
 from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import AzureCliCredential
@@ -42,7 +42,7 @@ async def main():
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        AzureAIClient(project_client=project_client) as client,
+        FoundryChatClient(project_client=project_client) as client,
     ):
         # This will enable tracing and configure the application to send telemetry data to the
         # Application Insights instance attached to the Azure AI project.
@@ -55,8 +55,8 @@ async def main():
         with get_tracer().start_as_current_span("Single Agent Chat", kind=SpanKind.CLIENT) as current_span:
             print(f"Trace ID: {format_trace_id(current_span.get_span_context().trace_id)}")
 
-            agent = ChatAgent(
-                chat_client=client,
+            agent = Agent(
+                client=client,
                 tools=get_weather,
                 name="WeatherAgent",
                 instructions="You are a weather assistant.",

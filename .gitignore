@@ -3,4 +3,4 @@
 .env_backup
 **/venv
 **.egg-info
-venv.backup/
+venv.backup/__pycache__/

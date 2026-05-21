@@ -2,8 +2,8 @@
 
 import asyncio
 
-from agent_framework import ChatAgent, MCPStreamableHTTPTool
-from agent_framework.azure import AzureAIClient
+from agent_framework import Agent, MCPStreamableHTTPTool
+from agent_framework.foundry import FoundryChatClient
 from azure.identity.aio import AzureCliCredential
 from azure.ai.projects.aio import AIProjectClient
 import os
@@ -29,13 +29,13 @@ servers, showing both agent-level and run-level tool configuration patterns.
 #     async with (
 #         AzureCliCredential() as credential,
 #         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-#         AzureAIClient(project_client=project_client) as client,
+#         FoundryChatClient(project_client=project_client) as client,
 #         MCPStreamableHTTPTool(
 #             name="Microsoft Learn MCP",
 #             url="https://learn.microsoft.com/api/mcp",
 #         ) as mcp_server,
-#         ChatAgent(
-#             chat_client=client,
+#         Agent(
+#             client=client,
 #             name="DocsAgent",
 #             instructions="You are a helpful assistant that can help with microsoft documentation questions.",
 #         ) as agent,
@@ -63,9 +63,9 @@ async def mcp_tools_on_agent_level() -> None:
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        AzureAIClient(project_client=project_client) as client,
-        ChatAgent(
-            chat_client=client,
+        FoundryChatClient(project_client=project_client) as client,
+        Agent(
+            client=client,
             name="MathAgent",
             id="MathAgent",
             instructions="You are a helpful assistant that can help with microsoft documentation questions.",

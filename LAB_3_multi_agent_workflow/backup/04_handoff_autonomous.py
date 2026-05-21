@@ -6,17 +6,14 @@ from typing import cast
 
 from agent_framework import (
     AgentResponseUpdate,
-    AgentRunUpdateEvent,
-    ChatAgent,
-    ChatMessage,
-    HandoffBuilder,
-    HostedWebSearchTool,
+    Agent,
+    Message,
     WorkflowEvent,
-    WorkflowOutputEvent,
     resolve_agent_id,
     tool,
 )
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework.orchestrations import HandoffBuilder
+from agent_framework.openai import OpenAIChatClient
 from azure.identity import AzureCliCredential
 
 logging.basicConfig(level=logging.ERROR)
@@ -40,7 +37,7 @@ Routing Pattern:
 
 Prerequisites:
     - `az login` (Azure CLI authentication)
-    - Environment variables for AzureOpenAIChatClient (AZURE_OPENAI_ENDPOINT, etc.)
+    - Environment variables for OpenAIChatClient (AZURE_OPENAI_ENDPOINT, etc.)
 
 Key Concepts:
     - Autonomous interaction mode: agents iterate until they handoff
@@ -49,8 +46,8 @@ Key Concepts:
 
 
 def create_agents(
-    chat_client: AzureOpenAIChatClient,
-) -> tuple[ChatAgent, ChatAgent, ChatAgent]:
+    chat_client: OpenAIChatClient,
+) -> tuple[Agent, Agent, Agent]:
     """Create coordinator and specialists for autonomous iteration."""
     coordinator = chat_client.as_agent(
         instructions=(
@@ -89,7 +86,7 @@ last_response_id: str | None = None
 
 def _display_event(event: WorkflowEvent) -> None:
     """Print the final conversation snapshot from workflow output events."""
-    if isinstance(event, AgentRunUpdateEvent) and event.data:
+    if event.type == "intermediate" and isinstance(event.data, AgentResponseUpdate):
         update: AgentResponseUpdate = event.data
         if not update.text:
             return
@@ -98,11 +95,11 @@ def _display_event(event: WorkflowEvent) -> None:
             last_response_id = update.response_id
             print(f"\n- {update.author_name}: ", flush=True, end="")
         print(event.data, flush=True, end="")
-    elif isinstance(event, WorkflowOutputEvent):
-        conversation = cast(list[ChatMessage], event.data)
+    elif event.type == "output":
+        conversation = cast(list[Message], event.data)
         print("\n=== Final Conversation (Autonomous with Iteration) ===")
         for message in conversation:
-            speaker = message.author_name or message.role.value
+            speaker = message.author_name or message.role
             text_preview = message.text[:200] + "..." if len(message.text) > 200 else message.text
             print(f"- {speaker}: {text_preview}")
         print(f"\nTotal messages: {len(conversation)}")
@@ -111,10 +108,10 @@ def _display_event(event: WorkflowEvent) -> None:
 
 async def main() -> None:
     """Run an autonomous handoff workflow with specialist iteration enabled."""
-    # chat_client = AzureOpenAIChatClient(credential=AzureCliCredential())
-    chat_client = AzureOpenAIChatClient(
-        endpoint=endpoint,
-        deployment_name=deployment_name,
+    # chat_client = OpenAIChatClient(credential=AzureCliCredential())
+    chat_client = OpenAIChatClient(
+        azure_endpoint=endpoint,
+        model=deployment_name,
         credential=AzureCliCredential()
     )
     coordinator, research_agent, summary_agent = create_agents(chat_client)

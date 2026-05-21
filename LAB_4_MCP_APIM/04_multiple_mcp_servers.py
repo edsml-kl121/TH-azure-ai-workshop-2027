@@ -91,8 +91,8 @@ async def agent_tool_tests() -> None:
     print("\n=== Agent Framework Tool Tests (Both Servers) ===\n")
 
     try:
-        from agent_framework import ChatAgent, MCPStreamableHTTPTool
-        from agent_framework.azure import AzureAIClient
+        from agent_framework import Agent, MCPStreamableHTTPTool
+        from agent_framework.foundry import FoundryChatClient
         from azure.identity.aio import AzureCliCredential
         from azure.ai.projects.aio import AIProjectClient
     except ImportError:
@@ -113,9 +113,9 @@ async def agent_tool_tests() -> None:
         async with (
             AzureCliCredential() as credential,
             AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-            AzureAIClient(project_client=project_client) as client,
-            ChatAgent(
-                chat_client=client,
+            FoundryChatClient(project_client=project_client) as client,
+            Agent(
+                client=client,
                 name="MultiAgent",
                 id="MultiAgent",
                 instructions=(

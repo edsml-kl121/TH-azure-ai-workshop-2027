@@ -3,10 +3,10 @@
 import asyncio
 import os
 
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureAIClient
+from agent_framework import Agent
+from agent_framework.foundry import FoundryChatClient
 from azure.ai.projects.aio import AIProjectClient
-from agent_framework.azure import AzureAIAgentClient, AzureAISearchContextProvider
+from agent_framework.azure import AzureAISearchContextProvider
 from azure.identity.aio import AzureCliCredential
 from dotenv import load_dotenv
 
@@ -44,7 +44,7 @@ async def main() -> None:
         ) as project_client:
             
             # Create AI client (not a context manager)
-            client = AzureAIClient(project_client=project_client)
+            client = FoundryChatClient(project_client=project_client)
             
             # Build search provider kwargs
             kwargs = {
@@ -59,8 +59,8 @@ async def main() -> None:
             # Create search provider
             async with AzureAISearchContextProvider(**kwargs) as search_provider:
                 # Create agent
-                async with ChatAgent(
-                    chat_client=client,
+                async with Agent(
+                    client=client,
                     name="SearchAgent",
                     id="SearchAgent",
                     instructions=(

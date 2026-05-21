@@ -3,8 +3,9 @@
 import asyncio
 from typing import cast
 import os
-from agent_framework import ChatMessage, Role, SequentialBuilder, WorkflowOutputEvent
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Message
+from agent_framework.orchestrations import SequentialBuilder
+from agent_framework.openai import OpenAIChatClient
 from azure.identity import AzureCliCredential
 from dotenv import load_dotenv
 
@@ -26,7 +27,7 @@ Note on internal adapters:
   You can safely ignore them when focusing on agent progress.
 
 Prerequisites:
-- Azure OpenAI access configured for AzureOpenAIChatClient (use az login + env vars)
+- Azure OpenAI access configured for OpenAIChatClient (use az login + env vars)
 """
 
 
@@ -34,13 +35,13 @@ async def main() -> None:
     endpoint = os.environ.get("FOUNDRY_ENDPOINT")
     deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
 
-    chat_client = AzureOpenAIChatClient(
-        endpoint=endpoint,
-        deployment_name=deployment_name,
+    chat_client = OpenAIChatClient(
+        azure_endpoint=endpoint,
+        model=deployment_name,
         credential=AzureCliCredential()
     )
     # 1) Create agents
-    # chat_client = AzureOpenAIChatClient(credential=AzureCliCredential())
+    # chat_client = OpenAIChatClient(credential=AzureCliCredential())
 
     writer = chat_client.as_agent(
         instructions=("You are a concise copywriter. Provide a single, punchy marketing sentence based on the prompt."),
@@ -56,15 +57,15 @@ async def main() -> None:
     workflow = SequentialBuilder().participants([writer, reviewer]).build()
 
     # 3) Run and collect outputs
-    outputs: list[list[ChatMessage]] = []
+    outputs: list[list[Message]] = []
     async for event in workflow.run_stream("Write a tagline for a budget-friendly eBike."):
-        if isinstance(event, WorkflowOutputEvent):
-            outputs.append(cast(list[ChatMessage], event.data))
+        if event.type == "output":
+            outputs.append(cast(list[Message], event.data))
 
     if outputs:
         print("===== Final Conversation =====")
         for i, msg in enumerate(outputs[-1], start=1):
-            name = msg.author_name or ("assistant" if msg.role == Role.ASSISTANT else "user")
+            name = msg.author_name or ("assistant" if msg.role == "assistant" else "user")
             print(f"{'-' * 60}\n{i:02d} [{name}]\n{msg.text}")
 
     """
