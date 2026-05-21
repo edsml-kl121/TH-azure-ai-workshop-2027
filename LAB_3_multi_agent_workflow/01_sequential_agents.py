@@ -1,9 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import asyncio
-from typing import cast
 import os
-from agent_framework import Message
 from agent_framework.orchestrations import SequentialBuilder
 from agent_framework.openai import OpenAIChatClient
 from azure.identity import AzureCliCredential
@@ -56,17 +54,14 @@ async def main() -> None:
     # 2) Build sequential workflow: writer -> reviewer
     workflow = SequentialBuilder(participants=[writer, reviewer]).build()
 
-    # 3) Run and collect outputs
-    outputs: list[list[Message]] = []
-    async for event in workflow.run("Write a tagline for a budget-friendly eBike.", stream=True):
-        if event.type == "output":
-            outputs.append(cast(list[Message], event.data))
+    # 3) Run and collect outputs (non-streaming for clean per-agent grouping)
+    result = await workflow.run("Write a tagline for a budget-friendly eBike.")
+    outputs = result.get_outputs()
 
     if outputs:
         print("===== Final Conversation =====")
-        for i, msg in enumerate(outputs[-1], start=1):
-            name = msg.author_name or ("assistant" if msg.role == "assistant" else "user")
-            print(f"{'-' * 60}\n{i:02d} [{name}]\n{msg.text}")
+        for i, response in enumerate(outputs, start=1):
+            print(f"{'-' * 60}\n{i:02d}\n{response.text}")
 
     """
     Sample Output:

@@ -172,25 +172,24 @@ def create_email_assistant_agent() -> Agent:
 async def main() -> None:
     print(endpoint)
     print(deployment_name)
+
+    # Create agents (workflow manages their lifecycle)
+    spam_detector = create_spam_detector_agent()
+    email_assistant = create_email_assistant_agent()
+
     # Build the workflow graph.
     # Start at the spam detector.
     # If not spam, hop to a transformer that creates a new AgentExecutorRequest,
     # then call the email assistant, then finalize.
     # If spam, go directly to the spam handler and finalize.
     workflow = (
-        WorkflowBuilder()
-        .register_agent(create_spam_detector_agent, name="spam_detection_agent")
-        .register_agent(create_email_assistant_agent, name="email_assistant_agent")
-        .register_executor(lambda: to_email_assistant_request, name="to_email_assistant_request")
-        .register_executor(lambda: handle_email_response, name="send_email")
-        .register_executor(lambda: handle_spam_classifier_response, name="handle_spam")
-        .set_start_executor("spam_detection_agent")
+        WorkflowBuilder(start_executor=spam_detector)
         # Not spam path: transform response -> request for assistant -> assistant -> send email
-        .add_edge("spam_detection_agent", "to_email_assistant_request", condition=get_condition(False))
-        .add_edge("to_email_assistant_request", "email_assistant_agent")
-        .add_edge("email_assistant_agent", "send_email")
+        .add_edge(spam_detector, to_email_assistant_request, condition=get_condition(False))
+        .add_edge(to_email_assistant_request, email_assistant)
+        .add_edge(email_assistant, handle_email_response)
         # Spam path: send to spam handler
-        .add_edge("spam_detection_agent", "handle_spam", condition=get_condition(True))
+        .add_edge(spam_detector, handle_spam_classifier_response, condition=get_condition(True))
         .build()
     )
 
