@@ -169,40 +169,32 @@ def create_email_assistant_agent() -> Agent:
     )
 
 
-async def main() -> None:
-    print(endpoint)
-    print(deployment_name)
-
-    # Create agents (workflow manages their lifecycle)
+def build_workflow():
+    """Build a fresh workflow instance (can be called multiple times)."""
     spam_detector = create_spam_detector_agent()
     email_assistant = create_email_assistant_agent()
 
-    # Build the workflow graph.
-    # Start at the spam detector.
-    # If not spam, hop to a transformer that creates a new AgentExecutorRequest,
-    # then call the email assistant, then finalize.
-    # If spam, go directly to the spam handler and finalize.
-    workflow = (
+    return (
         WorkflowBuilder(start_executor=spam_detector, output_from="all")
-        # Not spam path: transform response -> request for assistant -> assistant -> send email
         .add_edge(spam_detector, to_email_assistant_request, condition=get_condition(False))
         .add_edge(to_email_assistant_request, email_assistant)
         .add_edge(email_assistant, handle_email_response)
-        # Spam path: send to spam handler
         .add_edge(spam_detector, handle_spam_classifier_response, condition=get_condition(True))
         .build()
     )
 
-    # Read Email content from the sample resource file.
-    # This keeps the sample deterministic since the model sees the same email every run.
-    # email_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "resources", "email.txt")
-    email_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "resources", "spam.txt")
 
+async def main() -> None:
+    print(endpoint)
+    print(deployment_name)
+
+    # 1) Run a demo pass and print output to terminal
+    workflow = build_workflow()
+
+    email_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "resources", "spam.txt")
     with open(email_path) as email_file:  # noqa: ASYNC230
         email = email_file.read()
 
-    # Execute the workflow. Since the start is an AgentExecutor, pass an AgentExecutorRequest.
-    # The workflow completes when it becomes idle (no more work to do).
     request = AgentExecutorRequest(messages=[Message("user", email)], should_respond=True)
     events = await workflow.run(request)
     outputs = events.get_outputs()
@@ -214,59 +206,28 @@ async def main() -> None:
 
     Processing email:
     Subject: Team Meeting Follow-up - Action Items
-
-    Hi Sarah,
-
-    I wanted to follow up on our team meeting this morning and share the action items we discussed:
-
-    1. Update the project timeline by Friday
-    2. Schedule client presentation for next week
-    3. Review the budget allocation for Q4
-
-    Please let me know if you have any questions or if I missed anything from our discussion.
-
-    Best regards,
-    Alex Johnson
-    Project Manager
-    Tech Solutions Inc.
-    alex.johnson@techsolutions.com
-    (555) 123-4567
-    ----------------------------------------
-
-Workflow output: Email sent:
-    Hi Alex,
-
-    Thank you for the follow-up and for summarizing the action items from this morning's meeting. The points you listed accurately reflect our discussion, and I don't have any additional items to add at this time.
-
-    I will update the project timeline by Friday, begin scheduling the client presentation for next week, and start reviewing the Q4 budget allocation. If any questions or issues arise, I'll reach out.
-
-    Thank you again for outlining the next steps.
-
-    Best regards,
-    Sarah
+    ...
+    Workflow output: Email sent:
+        Hi Alex, ...
     """  # noqa: E501
-    return workflow
+
+    # 2) Return a FRESH workflow for the DevUI (avoids state contamination from the demo run)
+    return build_workflow()
+
 
 def start_devui(workflow):
-    """Launch the Foundry weather agent in DevUI."""
+    """Launch the workflow in DevUI."""
     import logging
 
     from agent_framework.devui import serve
 
-    # Setup logging
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger(__name__)
+    logger.info("Starting DevUI — available at: http://localhost:8000")
 
-    logger.info("Starting Foundry Weather Agent")
-    logger.info("Available at: http://localhost:8090")
-    logger.info("Entity ID: agent_FoundryWeatherAgent")
-    logger.info("Note: Make sure 'az login' has been run for authentication")
-
-    # Launch server with the agent
     serve(entities=[workflow], port=8000, auto_open=True)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
-    # Uncomment to launch the DevUI server after the run:
-    # start_devui(workflow)
+    workflow = asyncio.run(main())
+    start_devui(workflow)
