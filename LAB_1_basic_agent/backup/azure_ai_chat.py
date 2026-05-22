@@ -4,10 +4,10 @@ import asyncio
 from random import randint
 from typing import Annotated
 
-from agent_framework import ChatAgent
+from agent_framework import Agent
 from azure.identity.aio import AzureCliCredential
 from pydantic import Field
-from agent_framework.azure import AzureAIClient
+from agent_framework.foundry import FoundryChatClient
 import os
 
 from azure.ai.projects.aio import AIProjectClient
@@ -17,7 +17,7 @@ load_dotenv()
 
 Azure AI Agent Basic Example
 
-This sample demonstrates basic usage of AzureAIAgentClient to create agents with automatic
+This sample demonstrates basic usage of FoundryChatClient to create agents with automatic
 lifecycle management. Shows both streaming and non-streaming responses with function tools.
 """
 
@@ -37,23 +37,21 @@ async def streaming_example() -> None:
 
     credential = AzureCliCredential()
     project_client = AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential)
-    client = AzureAIClient(project_client=project_client)
+    client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
 
     questions = ["What's the weather in Seattle?", "and in New York, which is better?"]
-    agent = ChatAgent(
-        chat_client=client,
+    agent = Agent(
+        client=client,
         tools=get_weather,
         name="MewWeatherAgent",
         instructions="You are a weather assistant.",
         id="mew-weather-agent",
     )
-    thread = agent.get_new_thread()
     for question in questions:
         print(f"\nUser: {question}")
         print(f"{agent.name}: ", end="")
         async for update in agent.run_stream(
             question,
-            thread=thread,
         ):
             if update.text:
                 print(update.text, end="")

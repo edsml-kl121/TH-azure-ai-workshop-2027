@@ -23,20 +23,18 @@ from typing import Annotated, cast
 import streamlit as st
 from agent_framework import (
     AgentResponse,
-    AgentRunEvent,
-    ChatAgent,
-    ChatMessage,
+    Agent,
+    Message,
+    WorkflowEvent,
+    WorkflowRunState,
+    tool,
+)
+from agent_framework.orchestrations import (
     HandoffAgentUserRequest,
     HandoffBuilder,
     HandoffSentEvent,
-    RequestInfoEvent,
-    WorkflowEvent,
-    WorkflowOutputEvent,
-    WorkflowRunState,
-    WorkflowStatusEvent,
-    tool,
 )
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework.openai import OpenAIChatClient
 from azure.identity import AzureCliCredential
 import os
 from dotenv import load_dotenv
@@ -149,7 +147,7 @@ def process_return(order_number: Annotated[str, "Order number to process return 
     return f"Return initiated successfully for order {order_number}. You will receive return instructions via email."
 
 
-def create_agents(chat_client: AzureOpenAIChatClient) -> tuple[ChatAgent, ChatAgent, ChatAgent, ChatAgent]:
+def create_agents(chat_client: OpenAIChatClient) -> tuple[Agent, Agent, Agent, Agent]:
     """Create and configure the triage and specialist agents."""
     triage_agent = chat_client.as_agent(
         instructions=(
@@ -157,47 +155,51 @@ def create_agents(chat_client: AzureOpenAIChatClient) -> tuple[ChatAgent, ChatAg
             "based on the problem described."
         ),
         name="triage_agent",
+        require_per_service_call_history_persistence=True,
     )
 
     refund_agent = chat_client.as_agent(
         instructions="You process refund requests.",
         name="refund_agent",
         tools=[process_refund],
+        require_per_service_call_history_persistence=True,
     )
 
     order_agent = chat_client.as_agent(
         instructions="You handle order and shipping inquiries.",
         name="order_agent",
         tools=[check_order_status],
+        require_per_service_call_history_persistence=True,
     )
 
     return_agent = chat_client.as_agent(
         instructions="You manage product return requests.",
         name="return_agent",
         tools=[process_return],
+        require_per_service_call_history_persistence=True,
     )
 
     return triage_agent, refund_agent, order_agent, return_agent
 
 
-def process_events(events: list[WorkflowEvent]) -> tuple[list[dict], list[RequestInfoEvent]]:
+def process_events(events: list[WorkflowEvent]) -> tuple[list[dict], list[WorkflowEvent]]:
     """Process workflow events and return display items and pending requests."""
     display_items = []
-    requests = []
+    requests: list[WorkflowEvent] = []
     seen_messages = set()  # Track messages to avoid duplicates
 
     for event in events:
-        if isinstance(event, AgentRunEvent):
+        if event.type == "intermediate" and isinstance(event.data, AgentResponse):
             for message in event.data.messages:
                 if not message.text:
                     continue
                 # Create a unique key for the message to avoid duplicates
-                msg_key = (message.author_name or message.role.value, message.text)
+                msg_key = (message.author_name or message.role, message.text)
                 if msg_key not in seen_messages:
                     seen_messages.add(msg_key)
                     display_items.append({
                         "type": "agent",
-                        "speaker": message.author_name or message.role.value,
+                        "speaker": message.author_name or message.role,
                         "text": message.text
                     })
 
@@ -208,7 +210,7 @@ def process_events(events: list[WorkflowEvent]) -> tuple[list[dict], list[Reques
                 "target": event.target
             })
 
-        if isinstance(event, WorkflowStatusEvent) and event.state in {
+        if event.type == "status" and event.state in {
             WorkflowRunState.IDLE,
             WorkflowRunState.IDLE_WITH_PENDING_REQUESTS,
         }:
@@ -217,32 +219,31 @@ def process_events(events: list[WorkflowEvent]) -> tuple[list[dict], list[Reques
                 "state": event.state.name
             })
 
-        elif isinstance(event, WorkflowOutputEvent):
-            conversation = cast(list[ChatMessage], event.data)
+        elif event.type == "output":
+            conversation = cast(list[Message], event.data)
             if isinstance(conversation, list):
                 display_items.append({
                     "type": "final_conversation",
                     "messages": [
                         {
-                            "speaker": msg.author_name or msg.role.value,
+                            "speaker": msg.author_name or msg.role,
                             "text": msg.text or str([content.type for content in msg.contents])
                         }
                         for msg in conversation
                     ]
                 })
 
-        elif isinstance(event, RequestInfoEvent):
-            # Only add messages from RequestInfoEvent if they haven't been seen
-            # (they may already be in AgentRunEvent)
+        elif event.type == "request_info":
+            # Only add messages from request_info events if they haven't been seen
             if isinstance(event.data, HandoffAgentUserRequest):
                 for message in event.data.agent_response.messages:
                     if message.text:
-                        msg_key = (message.author_name or message.role.value, message.text)
+                        msg_key = (message.author_name or message.role, message.text)
                         if msg_key not in seen_messages:
                             seen_messages.add(msg_key)
                             display_items.append({
                                 "type": "agent",
-                                "speaker": message.author_name or message.role.value,
+                                "speaker": message.author_name or message.role,
                                 "text": message.text
                             })
             requests.append(event)
@@ -252,9 +253,9 @@ def process_events(events: list[WorkflowEvent]) -> tuple[list[dict], list[Reques
 
 def create_workflow():
     """Create a new workflow instance."""
-    chat_client = AzureOpenAIChatClient(
-        endpoint=endpoint,
-        deployment_name=deployment_name,
+    chat_client = OpenAIChatClient(
+        azure_endpoint=endpoint,
+        model=deployment_name,
         credential=AzureCliCredential()
     )
 
@@ -309,7 +310,7 @@ async def run_workflow_step(workflow, message: str, pending_requests: list):
             req.request_id: HandoffAgentUserRequest.create_response(message) 
             for req in pending_requests
         }
-        events = await workflow.send_responses(responses)
+        events = await workflow.run(responses=responses)
     
     return process_events(events)
 

@@ -2,8 +2,8 @@
 
 import asyncio
 
-from agent_framework import ChatAgent, MCPStreamableHTTPTool
-from agent_framework.azure import AzureAIClient
+from agent_framework import Agent, MCPStreamableHTTPTool
+from agent_framework.foundry import FoundryChatClient
 from azure.identity.aio import AzureCliCredential
 from azure.ai.projects.aio import AIProjectClient
 import os
@@ -29,13 +29,13 @@ servers, showing both agent-level and run-level tool configuration patterns.
 #     async with (
 #         AzureCliCredential() as credential,
 #         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-#         AzureAIClient(project_client=project_client) as client,
+#         FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]) as client,
 #         MCPStreamableHTTPTool(
 #             name="Microsoft Learn MCP",
 #             url="https://learn.microsoft.com/api/mcp",
 #         ) as mcp_server,
-#         ChatAgent(
-#             chat_client=client,
+#         Agent(
+#             client=client,
 #             name="DocsAgent",
 #             instructions="You are a helpful assistant that can help with microsoft documentation questions.",
 #         ) as agent,
@@ -63,9 +63,10 @@ async def mcp_tools_on_agent_level() -> None:
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        AzureAIClient(project_client=project_client) as client,
-        ChatAgent(
-            chat_client=client,
+    ):
+        client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
+        async with Agent(
+            client=client,
             name="MathAgent",
             id="MathAgent",
             instructions="You are a helpful assistant that can help with microsoft documentation questions.",
@@ -76,19 +77,18 @@ async def mcp_tools_on_agent_level() -> None:
                 url="https://aiworkshop-apim-rmsgmwk472oxi.azure-api.net/maths/mcp", # <-- replace with APIM MCP URL for exercise 2
                 load_prompts=False,  # Disable prompt loading
             ),
-        ) as agent,
-    ):
-        # # First query
-        # query1 = "How to create an Azure storage account using az cli?"
-        # print(f"User: {query1}")
-        # result1 = await agent.run(query1)
-        # print(f"{agent.name}: {result1}\n")
-        # print("\n=======================================\n")
-        # Second query
-        query2 = "Whats 2+2"
-        print(f"User: {query2}")
-        result2 = await agent.run(query2)
-        print(f"{agent.name}: {result2}\n")
+        ) as agent:
+                # # First query
+                # query1 = "How to create an Azure storage account using az cli?"
+                # print(f"User: {query1}")
+                # result1 = await agent.run(query1)
+                # print(f"{agent.name}: {result1}\n")
+                # print("\n=======================================\n")
+                # Second query
+                query2 = "Whats 2+2"
+                print(f"User: {query2}")
+                result2 = await agent.run(query2)
+                print(f"{agent.name}: {result2}\n")
 
 
 async def main() -> None:

@@ -1,10 +1,9 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import asyncio
-from typing import cast
 import os
-from agent_framework import ChatMessage, Role, SequentialBuilder, WorkflowOutputEvent
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework.orchestrations import SequentialBuilder
+from agent_framework.openai import OpenAIChatClient
 from azure.identity import AzureCliCredential
 from dotenv import load_dotenv
 
@@ -26,21 +25,20 @@ Note on internal adapters:
   You can safely ignore them when focusing on agent progress.
 
 Prerequisites:
-- Azure OpenAI access configured for AzureOpenAIChatClient (use az login + env vars)
+- Azure OpenAI access configured for OpenAIChatClient (use az login + env vars)
 """
 
 
-async def main() -> None:
+def build_workflow():
+    """Build a fresh workflow instance (can be called multiple times)."""
     endpoint = os.environ.get("FOUNDRY_ENDPOINT")
     deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
 
-    chat_client = AzureOpenAIChatClient(
-        endpoint=endpoint,
-        deployment_name=deployment_name,
+    chat_client = OpenAIChatClient(
+        azure_endpoint=endpoint,
+        model=deployment_name,
         credential=AzureCliCredential()
     )
-    # 1) Create agents
-    # chat_client = AzureOpenAIChatClient(credential=AzureCliCredential())
 
     writer = chat_client.as_agent(
         instructions=("You are a concise copywriter. Provide a single, punchy marketing sentence based on the prompt."),
@@ -52,20 +50,19 @@ async def main() -> None:
         name="reviewer",
     )
 
-    # 2) Build sequential workflow: writer -> reviewer
-    workflow = SequentialBuilder().participants([writer, reviewer]).build()
+    return SequentialBuilder(participants=[writer, reviewer]).build()
 
-    # 3) Run and collect outputs
-    outputs: list[list[ChatMessage]] = []
-    async for event in workflow.run_stream("Write a tagline for a budget-friendly eBike."):
-        if isinstance(event, WorkflowOutputEvent):
-            outputs.append(cast(list[ChatMessage], event.data))
+
+async def main() -> None:
+    # 1) Run a demo pass and print output to terminal
+    workflow = build_workflow()
+    result = await workflow.run("Write a tagline for a budget-friendly eBike.")
+    outputs = result.get_outputs()
 
     if outputs:
         print("===== Final Conversation =====")
-        for i, msg in enumerate(outputs[-1], start=1):
-            name = msg.author_name or ("assistant" if msg.role == Role.ASSISTANT else "user")
-            print(f"{'-' * 60}\n{i:02d} [{name}]\n{msg.text}")
+        for i, response in enumerate(outputs, start=1):
+            print(f"{'-' * 60}\n{i:02d}\n{response.text}")
 
     """
     Sample Output:
@@ -83,24 +80,19 @@ async def main() -> None:
     appealing to budget-conscious consumers. It has a friendly and motivating tone, though it could
     be slightly shorter for more punch. Overall, a strong and effective suggestion!
     """
-    return workflow
+    # 2) Return a FRESH workflow for the DevUI (avoids state contamination from the demo run)
+    return build_workflow()
 
 def start_devui(workflow):
-    """Launch the Foundry weather agent in DevUI."""
+    """Launch the workflow in DevUI."""
     import logging
 
     from agent_framework.devui import serve
 
-    # Setup logging
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger(__name__)
+    logger.info("Starting DevUI — available at: http://localhost:8000")
 
-    logger.info("Starting Foundry Weather Agent")
-    logger.info("Available at: http://localhost:8090")
-    logger.info("Entity ID: agent_FoundryWeatherAgent")
-    logger.info("Note: Make sure 'az login' has been run for authentication")
-
-    # Launch server with the agent
     serve(entities=[workflow], port=8000, auto_open=True)
 
 if __name__ == "__main__":

@@ -15,8 +15,8 @@ import os
 from random import randint
 from typing import Annotated
 
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureAIClient
+from agent_framework import Agent
+from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import create_resource, enable_instrumentation, get_tracer
 from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import AzureCliCredential
@@ -53,8 +53,8 @@ async def main():
     async with (
         AzureCliCredential() as credential,
         AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-        AzureAIClient(project_client=project_client) as client,
     ):
+        client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
         # This will enable tracing and configure the application to send telemetry data to the
         # Application Insights instance attached to the Azure AI project.
         # This will override any existing configuration.
@@ -82,19 +82,17 @@ async def main():
         with get_tracer().start_as_current_span("Weather Agent Chat", kind=SpanKind.CLIENT) as current_span:
             print(f"Trace ID: {format_trace_id(current_span.get_span_context().trace_id)}")
 
-            agent = ChatAgent(
-                chat_client=client,
+            agent = Agent(
+                client=client,
                 tools=get_weather,
                 name="WeatherTracing25Feb",
                 instructions="You are a weather assistant.",
                 id="weather-tracing-25Feb",
             )
             for question in questions:
-                # Create a new thread for each question to avoid tool call conflicts
-                thread = agent.get_new_thread()
                 print(f"\nUser: {question}")
                 print(f"{agent.name}: ", end="", flush=True)
-                result = await agent.run(question, thread=thread)
+                result = await agent.run(question)
                 print(result)
 
 

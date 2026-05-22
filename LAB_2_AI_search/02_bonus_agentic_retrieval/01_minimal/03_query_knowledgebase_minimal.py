@@ -35,7 +35,7 @@ request = KnowledgeBaseRetrievalRequest(
     include_activity = True,
     # MINIMAL reasoning effort requires intents to specify the user's intent
     intents=[
-        KnowledgeRetrievalSemanticIntent(search="แผนประกันสุขภาพ Elite Care 2026 คุ้มครองสูงสุดกี่บาท"),
+        KnowledgeRetrievalSemanticIntent(search="แผนความคุ้มครองสูงสุด วงเงินค่ารักษาต่อปี คือเท่าไหร่? และ ค่าห้้องพักราคาเท่าไหร่?"),
     ],
 )
 

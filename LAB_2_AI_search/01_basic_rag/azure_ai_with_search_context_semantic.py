@@ -3,8 +3,10 @@
 import asyncio
 import os
 
-from agent_framework import ChatAgent
-from agent_framework.azure import AzureAIAgentClient, AzureAISearchContextProvider
+from agent_framework import Agent
+from agent_framework.foundry import FoundryChatClient
+from agent_framework.azure import AzureAISearchContextProvider
+from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import AzureCliCredential
 from azure.search.documents.aio import SearchClient
 from azure.core.credentials import AzureKeyCredential
@@ -76,54 +78,52 @@ async def main() -> None:
 
     # Create agent with search context provider
     async with (
+        AzureCliCredential() as credential,
+        AIProjectClient(endpoint=project_endpoint, credential=credential) as project_client,
         search_provider,
         search_client,
-        AzureAIAgentClient(
-            project_endpoint=project_endpoint,
-            model_deployment_name=model_deployment,
-            credential=AzureCliCredential(),
-        ) as client,
-        ChatAgent(
-            chat_client=client,
+    ):
+        client = FoundryChatClient(project_client=project_client, model=model_deployment)
+        async with Agent(
+            client=client,
             name="SearchAgent",
             instructions=(
                 "You are a helpful assistant. Use the provided context from the "
                 "knowledge base to answer questions accurately."
             ),
             context_providers=[search_provider],
-        ) as agent,
-    ):
-        print("=== Azure AI Agent with Search Context (Semantic Mode) ===\n")
+        ) as agent:
+            print("=== Azure AI Agent with Search Context (Semantic Mode) ===\n")
 
-        for user_input in USER_INPUTS:
-            print(f"User: {user_input}")
-            
-            # Get and print search results directly from Azure Search
-            print("\n--- Search Results ---")
-            context_text = ""
-            try:
-                search_results = await search_directly(search_client, user_input, top_k=3)
+            for user_input in USER_INPUTS:
+                print(f"User: {user_input}")
                 
-                for i, result in enumerate(search_results, 1):
-                    print(f"\n[Result {i}]")
-                    # Print available fields - adjust based on your index schema
-                    if 'content' in result:
-                        text = result['content'][:300] + "..." if len(result.get('content', '')) > 300 else result.get('content', '')
-                        print(f"  Content: {text}")
-                        context_text += f"\n[Document {i}]: {result['content']}"
-                    if 'title' in result:
-                        print(f"  Title: {result['title']}")
-                        context_text += f" (Title: {result['title']})"
-                    if '@search.score' in result:
-                        print(f"  Score: {result['@search.score']:.4f}")
-                    if '@search.reranker_score' in result:
-                        print(f"  Reranker Score: {result['@search.reranker_score']:.4f}")
-            except Exception as e:
-                print(f"  Error fetching search results: {e}")
-            print("\n--- End Search Results ---\n")
-            
-            # Build the augmented prompt with context
-            augmented_prompt = f"""Use the following context from the knowledge base to answer the question. 
+                # Get and print search results directly from Azure Search
+                print("\n--- Search Results ---")
+                context_text = ""
+                try:
+                    search_results = await search_directly(search_client, user_input, top_k=3)
+                    
+                    for i, result in enumerate(search_results, 1):
+                        print(f"\n[Result {i}]")
+                        # Print available fields - adjust based on your index schema
+                        if 'content' in result:
+                            text = result['content'][:300] + "..." if len(result.get('content', '')) > 300 else result.get('content', '')
+                            print(f"  Content: {text}")
+                            context_text += f"\n[Document {i}]: {result['content']}"
+                        if 'title' in result:
+                            print(f"  Title: {result['title']}")
+                            context_text += f" (Title: {result['title']})"
+                        if '@search.score' in result:
+                            print(f"  Score: {result['@search.score']:.4f}")
+                        if '@search.reranker_score' in result:
+                            print(f"  Reranker Score: {result['@search.reranker_score']:.4f}")
+                except Exception as e:
+                    print(f"  Error fetching search results: {e}")
+                print("\n--- End Search Results ---\n")
+                
+                # Build the augmented prompt with context
+                augmented_prompt = f"""Use the following context from the knowledge base to answer the question. 
 Answer based ONLY on the provided context. If the context contains the answer, provide it directly.
 
 Context:
@@ -132,15 +132,15 @@ Context:
 Question: {user_input}
 
 Answer:"""
-            
-            print("Agent: ", end="", flush=True)
+                
+                print("Agent: ", end="", flush=True)
 
-            # Stream response with augmented prompt
-            async for chunk in agent.run_stream(augmented_prompt):
-                if chunk.text:
-                    print(chunk.text, end="", flush=True)
+                # Stream response with augmented prompt
+                async for chunk in agent.run(augmented_prompt, stream=True):
+                    if chunk.text:
+                        print(chunk.text, end="", flush=True)
 
-            print("\n")
+                print("\n")
 
 
 if __name__ == "__main__":

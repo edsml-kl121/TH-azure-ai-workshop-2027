@@ -91,8 +91,8 @@ async def agent_tool_tests() -> None:
     print("\n=== Agent Framework Tool Tests (Both Servers) ===\n")
 
     try:
-        from agent_framework import ChatAgent, MCPStreamableHTTPTool
-        from agent_framework.azure import AzureAIClient
+        from agent_framework import Agent, MCPStreamableHTTPTool
+        from agent_framework.foundry import FoundryChatClient
         from azure.identity.aio import AzureCliCredential
         from azure.ai.projects.aio import AIProjectClient
     except ImportError:
@@ -113,9 +113,10 @@ async def agent_tool_tests() -> None:
         async with (
             AzureCliCredential() as credential,
             AIProjectClient(endpoint=os.environ["AZURE_AI_PROJECT_ENDPOINT"], credential=credential) as project_client,
-            AzureAIClient(project_client=project_client) as client,
-            ChatAgent(
-                chat_client=client,
+        ):
+            client = FoundryChatClient(project_client=project_client, model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"])
+            async with Agent(
+                client=client,
                 name="MultiAgent",
                 id="MultiAgent",
                 instructions=(
@@ -136,15 +137,14 @@ async def agent_tool_tests() -> None:
                         load_prompts=False,
                     ),
                 ],
-            ) as agent,
-        ):
-            for i, (label, query) in enumerate(queries, 1):
-                print(f"[{i}/{len(queries)}] ({label}) User: {query}")
-                try:
-                    result = await agent.run(query)
-                    print(f"MultiAgent: {result}\n")
-                except Exception as e:
-                    print(f"❌ Error: {e}\n")
+            ) as agent:
+                for i, (label, query) in enumerate(queries, 1):
+                    print(f"[{i}/{len(queries)}] ({label}) User: {query}")
+                    try:
+                        result = await agent.run(query)
+                        print(f"MultiAgent: {result}\n")
+                    except Exception as e:
+                        print(f"❌ Error: {e}\n")
     except Exception as e:
         print(f"❌ Agent initialization failed: {e}")
         print(f"   This might be due to APIM returning HTML instead of JSON.")
