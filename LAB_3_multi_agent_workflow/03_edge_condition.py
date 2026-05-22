@@ -183,7 +183,7 @@ async def main() -> None:
     # then call the email assistant, then finalize.
     # If spam, go directly to the spam handler and finalize.
     workflow = (
-        WorkflowBuilder(start_executor=spam_detector)
+        WorkflowBuilder(start_executor=spam_detector, output_from="all")
         # Not spam path: transform response -> request for assistant -> assistant -> send email
         .add_edge(spam_detector, to_email_assistant_request, condition=get_condition(False))
         .add_edge(to_email_assistant_request, email_assistant)
@@ -267,5 +267,6 @@ def start_devui(workflow):
 
 
 if __name__ == "__main__":
-    workflow = asyncio.run(main())
-    start_devui(workflow)
+    asyncio.run(main())
+    # Uncomment to launch the DevUI server after the run:
+    # start_devui(workflow)

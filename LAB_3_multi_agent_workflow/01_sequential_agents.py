@@ -100,5 +100,6 @@ def start_devui(workflow):
     serve(entities=[workflow], port=8000, auto_open=True)
 
 if __name__ == "__main__":
-    workflow = asyncio.run(main())
-    start_devui(workflow)
+    asyncio.run(main())
+    # Uncomment to launch the DevUI server after the run:
+    # start_devui(workflow)

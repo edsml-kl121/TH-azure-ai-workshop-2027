@@ -155,24 +155,28 @@ def create_agents(chat_client: OpenAIChatClient) -> tuple[Agent, Agent, Agent, A
             "based on the problem described."
         ),
         name="triage_agent",
+        require_per_service_call_history_persistence=True,
     )
 
     refund_agent = chat_client.as_agent(
         instructions="You process refund requests.",
         name="refund_agent",
         tools=[process_refund],
+        require_per_service_call_history_persistence=True,
     )
 
     order_agent = chat_client.as_agent(
         instructions="You handle order and shipping inquiries.",
         name="order_agent",
         tools=[check_order_status],
+        require_per_service_call_history_persistence=True,
     )
 
     return_agent = chat_client.as_agent(
         instructions="You manage product return requests.",
         name="return_agent",
         tools=[process_return],
+        require_per_service_call_history_persistence=True,
     )
 
     return triage_agent, refund_agent, order_agent, return_agent
