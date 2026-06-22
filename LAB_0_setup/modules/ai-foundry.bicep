@@ -77,7 +77,7 @@ resource gpt4Deployment 'Microsoft.CognitiveServices/accounts/deployments@2025-0
     model: {
       format: 'OpenAI'
       name: 'gpt-5.4-mini'
-      version: '2024-07-18'
+      version: '2026-03-17'
     }
     versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
     raiPolicyName: 'Microsoft.Default'
