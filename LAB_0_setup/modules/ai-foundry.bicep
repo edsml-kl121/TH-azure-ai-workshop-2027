@@ -5,7 +5,7 @@ param location string = resourceGroup().location
 param aiFoundryName string
 
 @description('GPT model deployment name')
-param gptDeploymentName string = 'gpt-4o-mini'
+param gptDeploymentName string = 'gpt-5.4-mini'
 
 @description('GPT model capacity (TPM in thousands)')
 param gptCapacity int = 40
@@ -65,7 +65,7 @@ resource project 'Microsoft.CognitiveServices/accounts/projects@2025-04-01-previ
   }
 }
 
-// Deploy gpt-4o-mini model
+// Deploy gpt-5.4-mini model
 resource gpt4Deployment 'Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview' = {
   parent: aiFoundry
   name: gptDeploymentName
@@ -76,7 +76,7 @@ resource gpt4Deployment 'Microsoft.CognitiveServices/accounts/deployments@2025-0
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4o-mini'
+      name: 'gpt-5.4-mini'
       version: '2024-07-18'
     }
     versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
