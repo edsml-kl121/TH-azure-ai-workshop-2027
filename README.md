@@ -7,8 +7,6 @@ A comprehensive hands-on workshop for building AI agents with Azure AI Services,
 ## Table of Contents
 
 - [Python Environment Setup](#python-environment-setup)
-  - [Option 1: Using Poetry (Recommended)](#option-1-using-poetry-recommended)
-  - [Option 2: Using Traditional venv + requirements.txt](#option-2-using-traditional-venv--requirementstxt)
 - [Prerequisites](#prerequisites)
 - [LAB 0: Setup & Infrastructure Deployment](#lab-0-setup--infrastructure-deployment)
 - [LAB 1: Basic Agent](#lab-1-basic-agent)
@@ -23,37 +21,6 @@ A comprehensive hands-on workshop for building AI agents with Azure AI Services,
 ---
 
 ## Python Environment Setup
-
-Choose one of the following methods to set up your Python environment:
-
-### Option 1: Using Poetry (Recommended)
-
-Poetry is a modern Python dependency management tool that simplifies package installation and environment management.
-
-1. **Install Poetry** (if not already installed):
-   ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   poetry install --no-root
-   ```
-
-3. **Run scripts using Poetry**:
-   ```bash
-   # Run any Python script
-   poetry run python LAB_1_basic_agent/03_azure_ai_basic.py
-   
-   # Run Streamlit apps
-   poetry run streamlit run LAB_3_multi_agent_workflow/02_handoff_streamlit.py
-   ```
-
-   Poetry automatically manages the virtual environment for you - no need to activate it manually!
-
-### Option 2: Using Traditional venv + requirements.txt
-
-If you prefer the traditional Python virtual environment approach:
 
 1. **Create a virtual environment**:
    ```bash
@@ -99,6 +66,15 @@ If you prefer the traditional Python virtual environment approach:
 
 ### Step 1: Configure Resource Group
 
+Please ensure you enable the following first:
+```
+az provider register --namespace Microsoft.CognitiveServices
+az provider register --namespace Microsoft.Search
+az provider register --namespace Microsoft.ApiManagement
+az provider register --namespace Microsoft.ContainerRegistry
+az provider register --namespace Microsoft.Insights
+```
+
 1. Navigate to `LAB_0_setup/` directory
 2. Open `deploy_api.sh` and update the resource group name in line 25:
    ```bash
@@ -117,7 +93,7 @@ bash deploy_api.sh
 
 ### Step 3: Set Up Python Environment
 
-While waiting for deployment, set up your Python environment using one of the methods in the [Python Environment Setup](#python-environment-setup) section above.
+While waiting for deployment, set up your Python environment following the [Python Environment Setup](#python-environment-setup) section above.
 
 ### Step 4: Verify Deployment
 
@@ -134,13 +110,6 @@ After deployment completes, verify that the `.env` file in the root directory co
 ### Step 6: Hydrate Vector Index
 
 Initialize the Azure AI Search vector index:
-
-**Using Poetry:**
-```bash
-poetry run python LAB_0_setup/scripts/hydrating_vector_index.py
-```
-
-**Using venv (if activated):**
 ```bash
 python LAB_0_setup/scripts/hydrating_vector_index.py
 ```
@@ -148,13 +117,6 @@ python LAB_0_setup/scripts/hydrating_vector_index.py
 ### Step 7: Test Search Index
 
 Verify the search index is working:
-
-**Using Poetry:**
-```bash
-poetry run python LAB_0_setup/scripts/query_search_index.py
-```
-
-**Using venv (if activated):**
 ```bash
 python LAB_0_setup/scripts/query_search_index.py
 ```
@@ -166,13 +128,6 @@ python LAB_0_setup/scripts/query_search_index.py
 ### LAB 1: Basic Agent
 
 Navigate to `LAB_1_basic_agent/` and run:
-
-**Using Poetry:**
-```bash
-poetry run python LAB_1_basic_agent/03_azure_ai_basic.py
-```
-
-**Using venv (if activated):**
 ```bash
 python LAB_1_basic_agent/03_azure_ai_basic.py
 ```
@@ -187,12 +142,12 @@ This lab covers Azure AI Search fundamentals and Retrieval-Augmented Generation 
 
 #### Lab 2.0: Search Fundamentals
 ```bash
-poetry run python LAB_2_AI_search/00_search_fundamentals/search_fundamentals.py
+python LAB_2_AI_search/00_search_fundamentals/search_fundamentals.py
 ```
 
 #### Lab 2.1: Basic RAG
 ```bash
-poetry run python LAB_2_AI_search/01_basic_rag/azure_ai_with_search_context_semantic.py
+python LAB_2_AI_search/01_basic_rag/azure_ai_with_search_context_semantic.py
 ```
 
 #### Lab 2.2: Bonus - Agentic Retrieval
@@ -208,7 +163,7 @@ See [03_foundry_portal/README.md](LAB_2_AI_search/03_foundry_portal/README.md) f
 
 #### Lab 2.4: Bonus - Redis
 ```bash
-poetry run python LAB_2_AI_search/04_bonus/redis_basics.py
+python LAB_2_AI_search/04_bonus/redis_basics.py
 ```
 
 ---
@@ -219,17 +174,17 @@ Navigate to `LAB_3_multi_agent_workflow/`:
 
 #### Lab 3.1: Sequential Agents
 ```bash
-poetry run python LAB_3_multi_agent_workflow/01_sequential_agents.py
+python LAB_3_multi_agent_workflow/01_sequential_agents.py
 ```
 
 #### Lab 3.2: Handoff with Streamlit UI
 ```bash
-poetry run streamlit run LAB_3_multi_agent_workflow/02_handoff_streamlit.py
+streamlit run LAB_3_multi_agent_workflow/02_handoff_streamlit.py
 ```
 
 #### Lab 3.3: Edge Conditions
 ```bash
-poetry run python LAB_3_multi_agent_workflow/03_edge_condition.py
+python LAB_3_multi_agent_workflow/03_edge_condition.py
 ```
 
 For more information, see [LAB_3_multi_agent_workflow/README.md](LAB_3_multi_agent_workflow/README.md).
@@ -242,7 +197,7 @@ This lab covers MCP servers and Azure API Management integration.
 
 #### Lab 4.1: Microsoft Learn MCP
 ```bash
-poetry run python LAB_4_MCP_APIM/01_mslearn_mcp.py
+python LAB_4_MCP_APIM/01_mslearn_mcp.py
 ```
 
 #### Lab 4.2: Deploy Pets API Server
@@ -255,7 +210,7 @@ bash deploy-to-azure.sh
 
 While waiting, test locally:
 ```bash
-poetry run python LAB_4_MCP_APIM/02_api_to_mcp_agent.py
+python LAB_4_MCP_APIM/02_api_to_mcp_agent.py
 ```
 
 Once deployed, copy the Container App URL and update it in `openapi.json`.
@@ -274,8 +229,8 @@ C) Go to MCP server tab → Create an MCP server → Assign the created product.
 
 D) Update `.env` with the MCP server URL and API key, then run:
 ```bash
-poetry run python LAB_4_MCP_APIM/03_existing_mcp_agent.py
-poetry run python LAB_4_MCP_APIM/04_multiple_mcp_servers.py
+python LAB_4_MCP_APIM/03_existing_mcp_agent.py
+python LAB_4_MCP_APIM/04_multiple_mcp_servers.py
 ```
 
 #### Bonus: Math MCP Server
@@ -294,12 +249,12 @@ bash deploy-to-azure.sh
 Navigate to `LAB_5_evaluation/` to learn about agent and model evaluation:
 
 ```bash
-poetry run python LAB_5_evaluation/01_nlp_scores.py
-poetry run python LAB_5_evaluation/02_ai_quality.py
-poetry run python LAB_5_evaluation/03_safety.py
-poetry run python LAB_5_evaluation/04_batch_evaluate.py
-poetry run python LAB_5_evaluation/05_custom_evaluators.py
-poetry run python LAB_5_evaluation/06_agentic_evaluation.py
+python LAB_5_evaluation/01_nlp_scores.py
+python LAB_5_evaluation/02_ai_quality.py
+python LAB_5_evaluation/03_safety.py
+python LAB_5_evaluation/04_batch_evaluate.py
+python LAB_5_evaluation/05_custom_evaluators.py
+python LAB_5_evaluation/06_agentic_evaluation.py
 ```
 
 ---
@@ -309,7 +264,7 @@ poetry run python LAB_5_evaluation/06_agentic_evaluation.py
 Learn about agent tracing and monitoring with Azure Application Insights:
 
 ```bash
-poetry run python LAB_6_observability/agent_with_foundry_tracing.py
+python LAB_6_observability/agent_with_foundry_tracing.py
 ```
 
 ---
@@ -319,7 +274,7 @@ poetry run python LAB_6_observability/agent_with_foundry_tracing.py
 Explore Azure AI Document Intelligence for document analysis:
 
 ```bash
-poetry run python LAB_7_ai_services/sample_analyze_layout.py
+python LAB_7_ai_services/sample_analyze_layout.py
 ```
 
 ---

@@ -82,7 +82,7 @@ module aiFoundry 'modules/ai-foundry.bicep' = {
   params: {
     location: location
     aiFoundryName: aiFoundryName
-    gptDeploymentName: 'gpt-4o-mini'
+    gptDeploymentName: 'gpt-5-mini'
     gptCapacity: gptCapacity
     embeddingDeploymentName: 'text-embedding-3-small'
     embeddingCapacity: embeddingCapacity

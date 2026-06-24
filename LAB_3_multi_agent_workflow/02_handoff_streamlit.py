@@ -126,7 +126,7 @@ st.markdown("""
 
 # Environment variables
 endpoint = os.environ.get("FOUNDRY_ENDPOINT")
-deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
+deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-5-mini")
 
 
 @tool(approval_mode="never_require")

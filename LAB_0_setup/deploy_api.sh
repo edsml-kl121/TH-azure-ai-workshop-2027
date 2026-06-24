@@ -24,7 +24,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RESOURCE_GROUP_NAME="${RESOURCE_GROUP_NAME:-mew11-azure-ai-workshop-rg}"
+RESOURCE_GROUP_NAME="${RESOURCE_GROUP_NAME:-siampiwat-v4-azure-ai-workshop-rg}"
 LOCATION="${LOCATION:-swedencentral}"
 DEPLOYMENT_NAME="ai-workshop-deployment-$(date +%Y%m%d-%H%M%S)"
 

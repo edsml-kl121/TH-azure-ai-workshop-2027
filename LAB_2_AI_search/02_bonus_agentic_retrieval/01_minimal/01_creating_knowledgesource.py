@@ -10,13 +10,14 @@ load_dotenv()
 
 search_endpoint = os.getenv("AZURE_SEARCH_ENDPOINT")
 index_name = os.getenv("AZURE_SEARCH_INDEX_NAME", "health-insurance-benefits-index")
+knowledge_source_name = os.getenv("AZURE_SEARCH_KNOWLEDGE_SOURCE_NAME", f"{index_name}-ks")
 
 # Use DefaultAzureCredential for credential-less authentication
 credential = DefaultAzureCredential()
 index_client = SearchIndexClient(endpoint=search_endpoint, credential=credential)
 
 knowledge_source = SearchIndexKnowledgeSource(
-    name = f"{index_name}-ks",
+    name = knowledge_source_name,
     description= "This knowledge source pulls from an existing index designed for agentic retrieval.",
     encryption_key = None,
     search_index_parameters = SearchIndexKnowledgeSourceParameters(

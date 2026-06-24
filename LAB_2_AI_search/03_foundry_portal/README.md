@@ -1,4 +1,4 @@
-1. Please create an Agent in Foundry Portal Called "Insurance Agent" and choose "gpt-4o-mini"
+1. Please create an Agent in Foundry Portal Called "Insurance Agent" and choose "gpt-5-mini"
 2. Please connect to the Foundry IQ Knowledge base we have created earlier
 
 ![alt text](../../assets/image.png)

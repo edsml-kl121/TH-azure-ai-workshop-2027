@@ -14,6 +14,8 @@ load_dotenv()
 
 endpoint = os.getenv("AZURE_SEARCH_ENDPOINT")
 api_key = os.getenv("AZURE_SEARCH_API_KEY")
+kb_name = os.getenv("AZURE_SEARCH_KB_NAME_MEDIUM", "my-kb-medium")
+knowledge_source_name = os.getenv("AZURE_SEARCH_KNOWLEDGE_SOURCE_NAME", "health-insurance-benefits-index-ks")
 
 # Use Azure AI Foundry endpoint with DefaultAzureCredential (key-less)
 aoai_endpoint = os.getenv("FOUNDRY_ENDPOINT")
@@ -33,13 +35,13 @@ aoai_params = AzureOpenAIVectorizerParameters(
 )
 
 knowledge_base = KnowledgeBase(
-    name = "my-kb-medium",
+    name = kb_name,
     description = "Knowledge base with HIGH reasoning effort for faster responses with constrained LLM processing.",
     retrieval_instructions = "Use the search index to answer questions.",
     answer_instructions = "Provide a concise answer based on the retrieved documents.",
     output_mode = KnowledgeRetrievalOutputMode.ANSWER_SYNTHESIS,
     knowledge_sources = [
-        KnowledgeSourceReference(name = "health-insurance-benefits-index-ks"),
+        KnowledgeSourceReference(name = knowledge_source_name),
     ],
     models = [KnowledgeBaseAzureOpenAIModel(azure_open_ai_parameters = aoai_params)],
     encryption_key = None,

@@ -32,7 +32,7 @@ Prerequisites:
 def build_workflow():
     """Build a fresh workflow instance (can be called multiple times)."""
     endpoint = os.environ.get("FOUNDRY_ENDPOINT")
-    deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
+    deployment_name = os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-5-mini")
 
     chat_client = OpenAIChatClient(
         azure_endpoint=endpoint,

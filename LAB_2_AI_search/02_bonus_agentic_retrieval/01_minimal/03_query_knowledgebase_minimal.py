@@ -12,12 +12,8 @@ load_dotenv()
 
 endpoint = os.getenv("AZURE_SEARCH_ENDPOINT")
 api_key = os.getenv("AZURE_SEARCH_API_KEY")
-
-# Use MINIMAL KB
-kb_name = "my-kb-minimal"
-# kb_name = "my-kb-low"
-# kb_name = "my-kb-medium"
-knowledge_source_name = "health-insurance-benefits-index-ks"
+kb_name = os.getenv("AZURE_SEARCH_KB_NAME_MINIMAL", "my-kb-minimal")
+knowledge_source_name = os.getenv("AZURE_SEARCH_KNOWLEDGE_SOURCE_NAME", "health-insurance-benefits-index-ks")
 kb_client = KnowledgeBaseRetrievalClient(endpoint = endpoint, knowledge_base_name = kb_name, credential = AzureKeyCredential(api_key))
 
 # For MINIMAL reasoning effort, intents must be specified
