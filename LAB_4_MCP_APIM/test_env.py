@@ -3,13 +3,13 @@ from dotenv import load_dotenv
 
 print("Before load_dotenv:")
 print(f"  MCP_API_KEY = {os.getenv('MCP_API_KEY', 'NOT SET')}")
-print(f"  MCP_SERVER_URL = {os.getenv('MCP_SERVER_URL', 'NOT SET')}")
+print(f"  PETS_MCP_SERVER_URL = {os.getenv('PETS_MCP_SERVER_URL', 'NOT SET')}")
 
 load_dotenv()
 
 print("\nAfter load_dotenv:")
 print(f"  MCP_API_KEY = {os.getenv('MCP_API_KEY', 'NOT SET')}")
-print(f"  MCP_SERVER_URL = {os.getenv('MCP_SERVER_URL', 'NOT SET')}")
+print(f"  PETS_MCP_SERVER_URL = {os.getenv('PETS_MCP_SERVER_URL', 'NOT SET')}")
 
 print("\nLooking for .env file:")
 from dotenv import find_dotenv

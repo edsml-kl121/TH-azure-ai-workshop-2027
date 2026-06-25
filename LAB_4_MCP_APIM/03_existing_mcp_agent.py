@@ -74,7 +74,7 @@ async def mcp_tools_on_agent_level() -> None:
                 name="Maths MCP",
                 # url="http://127.0.0.1:8001/mcp", <-- replace with local URL for exercise 1
                 # url="https://maths-mcp-server.delightfulcoast-38fb42fa.swedencentral.azurecontainerapps.io/mcp", <-- replace with Container apps URL for exercise 2
-                url="https://aiworkshop-apim-rmsgmwk472oxi.azure-api.net/maths/mcp", # <-- replace with APIM MCP URL for exercise 2
+                url=os.environ["MATHS_MCP_SERVER_URL"],  # <-- replace with APIM MCP URL for exercise 2
                 load_prompts=False,  # Disable prompt loading
             ),
         ) as agent:

@@ -2,16 +2,16 @@
 set -e
 
 # Configuration
-RESOURCE_GROUP="mew11-azure-ai-workshop-rg"
+RESOURCE_GROUP="siampiwat-v4-azure-ai-workshop-rg"
 LOCATION="swedencentral"
-ACR_NAME="aiworkshopacr1771576791"  # Reuse existing ACR
-CONTAINER_APP_ENV="maths-mcp-env"
-CONTAINER_APP_NAME="maths-mcp-server"
-IMAGE_NAME="maths-mcp-server"
+ACR_NAME="aiworkshopacrdevsc"  # Unique name
+CONTAINER_APP_ENV="aiworkshop-capps-env-dev-sc"
+CONTAINER_APP_NAME="petstore-api"
+IMAGE_NAME="petstore-api"
 IMAGE_TAG="latest"
 
 echo "========================================="
-echo "Maths MCP Server - Azure Deployment Script"
+echo "Pet Store API - Azure Deployment Script"
 echo "========================================="
 
 # Check if logged in to Azure
@@ -94,7 +94,7 @@ if [ -z "$APP_EXISTS" ]; then
         --registry-server "$ACR_LOGIN_SERVER" \
         --registry-username "$ACR_USERNAME" \
         --registry-password "$ACR_PASSWORD" \
-        --target-port 8001 \
+        --target-port 8000 \
         --ingress external \
         --cpu 0.5 \
         --memory 1.0Gi \
@@ -102,12 +102,6 @@ if [ -z "$APP_EXISTS" ]; then
         --max-replicas 3
     echo "✅ Container App created: $CONTAINER_APP_NAME"
 else
-    az containerapp registry set \
-        --name "$CONTAINER_APP_NAME" \
-        --resource-group "$RESOURCE_GROUP" \
-        --server "$ACR_LOGIN_SERVER" \
-        --username "$ACR_USERNAME" \
-        --password "$ACR_PASSWORD"
     az containerapp update \
         --name "$CONTAINER_APP_NAME" \
         --resource-group "$RESOURCE_GROUP" \
@@ -129,6 +123,8 @@ echo "Container Registry: $ACR_NAME"
 echo "Container App: $CONTAINER_APP_NAME"
 echo "App URL: https://$APP_URL"
 echo ""
-echo "Test the MCP server:"
-echo "  MCP endpoint: https://$APP_URL/mcp"
+echo "Test the API:"
+echo "  Health Check: curl https://$APP_URL/"
+echo "  Get Pets:     curl https://$APP_URL/pets"
+echo "  Create Pet:   curl -X POST https://$APP_URL/pets -H 'Content-Type: application/json' -d '{\"name\":\"Rex\",\"species\":\"Dog\",\"age\":4}'"
 echo "========================================="

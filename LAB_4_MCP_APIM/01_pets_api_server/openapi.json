@@ -11,7 +11,7 @@
   },
   "servers": [
     {
-      "url": "https://petstore-api.calmground-998b2905.swedencentral.azurecontainerapps.io/",
+      "url": "https://petstore-api.politedesert-e4308733.swedencentral.azurecontainerapps.io",
       "description": "Production Container App (update with your actual URL)"
     },
     {

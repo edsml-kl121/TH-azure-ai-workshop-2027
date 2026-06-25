@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
+MCP_SERVER_URL = os.getenv("PETS_MCP_SERVER_URL")
 MCP_API_KEY = os.getenv("MCP_API_KEY")
 """
 MCP Authentication Example
@@ -28,7 +28,7 @@ For more authentication examples including OAuth 2.0 flows, see:
 async def api_key_auth_example() -> None:
     """Example of using API key authentication with MCP server."""
     # Configuration
-    mcp_server_url = os.getenv("MCP_SERVER_URL", "your-mcp-server-url")
+    mcp_server_url = os.getenv("PETS_MCP_SERVER_URL", "your-mcp-server-url")
     api_key = os.getenv("MCP_API_KEY")
 
     # Create authentication headers

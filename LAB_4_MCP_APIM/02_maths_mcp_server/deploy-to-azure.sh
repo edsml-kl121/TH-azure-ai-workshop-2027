@@ -2,16 +2,16 @@
 set -e
 
 # Configuration
-RESOURCE_GROUP="mew11-azure-ai-workshop-rg"
+RESOURCE_GROUP="siampiwat-v4-azure-ai-workshop-rg"
 LOCATION="swedencentral"
-ACR_NAME="aiworkshopacr$(date +%s)"  # Unique name
-CONTAINER_APP_ENV="petstore-env"
-CONTAINER_APP_NAME="petstore-api"
-IMAGE_NAME="petstore-api"
+ACR_NAME="aiworkshopacrdevsc"  # Reuse existing ACR
+CONTAINER_APP_ENV="aiworkshop-capps-env-dev-sc"
+CONTAINER_APP_NAME="maths-mcp-server"
+IMAGE_NAME="maths-mcp-server"
 IMAGE_TAG="latest"
 
 echo "========================================="
-echo "Pet Store API - Azure Deployment Script"
+echo "Maths MCP Server - Azure Deployment Script"
 echo "========================================="
 
 # Check if logged in to Azure
@@ -35,20 +35,29 @@ echo "✅ Using resource group: $RESOURCE_GROUP"
 # Create Azure Container Registry
 echo ""
 echo "📦 Creating Azure Container Registry..."
-ACR_EXISTS=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" 2>/dev/null || echo "")
-if [ -z "$ACR_EXISTS" ]; then
+# The ACR name is globally unique, so check across the whole subscription (not just this RG)
+ACR_RESOURCE_GROUP=$(az acr show --name "$ACR_NAME" --query resourceGroup -o tsv 2>/dev/null || echo "")
+if [ -z "$ACR_RESOURCE_GROUP" ]; then
+    # Confirm the name is actually available before attempting to create
+    NAME_AVAILABLE=$(az acr check-name --name "$ACR_NAME" --query nameAvailable -o tsv 2>/dev/null || echo "true")
+    if [ "$NAME_AVAILABLE" = "false" ]; then
+        echo "❌ Container Registry name '$ACR_NAME' is already in use by another subscription/tenant and is not accessible."
+        echo "   Please set ACR_NAME to a registry you own or a new unique name, then re-run."
+        exit 1
+    fi
     az acr create \
         --resource-group "$RESOURCE_GROUP" \
         --name "$ACR_NAME" \
         --sku Basic \
         --admin-enabled true
+    ACR_RESOURCE_GROUP="$RESOURCE_GROUP"
     echo "✅ Container Registry created: $ACR_NAME"
 else
-    echo "✅ Container Registry already exists: $ACR_NAME"
+    echo "✅ Container Registry already exists: $ACR_NAME (resource group: $ACR_RESOURCE_GROUP)"
 fi
 
 # Get ACR login server
-ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" --query loginServer -o tsv)
+ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)
 echo "✅ ACR Login Server: $ACR_LOGIN_SERVER"
 
 # Build and push Docker image
@@ -94,7 +103,7 @@ if [ -z "$APP_EXISTS" ]; then
         --registry-server "$ACR_LOGIN_SERVER" \
         --registry-username "$ACR_USERNAME" \
         --registry-password "$ACR_PASSWORD" \
-        --target-port 8000 \
+        --target-port 8001 \
         --ingress external \
         --cpu 0.5 \
         --memory 1.0Gi \
@@ -102,6 +111,12 @@ if [ -z "$APP_EXISTS" ]; then
         --max-replicas 3
     echo "✅ Container App created: $CONTAINER_APP_NAME"
 else
+    az containerapp registry set \
+        --name "$CONTAINER_APP_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --server "$ACR_LOGIN_SERVER" \
+        --username "$ACR_USERNAME" \
+        --password "$ACR_PASSWORD"
     az containerapp update \
         --name "$CONTAINER_APP_NAME" \
         --resource-group "$RESOURCE_GROUP" \
@@ -123,8 +138,6 @@ echo "Container Registry: $ACR_NAME"
 echo "Container App: $CONTAINER_APP_NAME"
 echo "App URL: https://$APP_URL"
 echo ""
-echo "Test the API:"
-echo "  Health Check: curl https://$APP_URL/"
-echo "  Get Pets:     curl https://$APP_URL/pets"
-echo "  Create Pet:   curl -X POST https://$APP_URL/pets -H 'Content-Type: application/json' -d '{\"name\":\"Rex\",\"species\":\"Dog\",\"age\":4}'"
+echo "Test the MCP server:"
+echo "  MCP endpoint: https://$APP_URL/mcp"
 echo "========================================="
