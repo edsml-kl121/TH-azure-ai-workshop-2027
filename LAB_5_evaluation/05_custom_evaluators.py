@@ -84,7 +84,6 @@ class FriendlinessEvaluator:
     def __call__(self, *, query: str, response: str, **kwargs):
         completion = llm_client.chat.completions.create(
             model=DEPLOYMENT,
-            temperature=0,
             messages=[
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {"role": "user", "content": f"Query: {query}\nResponse: {response}"},

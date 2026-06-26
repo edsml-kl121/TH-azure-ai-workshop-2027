@@ -16,6 +16,11 @@ model_config = {
     "azure_deployment": os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o"),
 }
 
+# gpt-5-mini is a reasoning model: it only supports temperature=1 and
+# max_completion_tokens. This preview flag makes the evaluators emit
+# reasoning-model-compatible request parameters.
+reasoning = {"is_reasoning_model": True}
+
 # ──────────────────────────────────────────────────────────────
 # 1. Tool Call Accuracy
 #    Evaluates whether the agent picked the right tool and
@@ -26,7 +31,7 @@ model_config = {
 #    tool_definitions must have: name, type, description, parameters
 # ──────────────────────────────────────────────────────────────
 
-tool_call_eval = ToolCallAccuracyEvaluator(model_config, credential=credential)
+tool_call_eval = ToolCallAccuracyEvaluator(model_config, credential=credential, **reasoning)
 
 # Define the tools the agent has access to
 tool_definitions = [
@@ -102,7 +107,7 @@ print(f"  Reason: {result.get('tool_call_accuracy_reason', 'N/A')}")
 #    intent based on the query and response?
 # ──────────────────────────────────────────────────────────────
 
-intent_eval = IntentResolutionEvaluator(model_config, credential=credential)
+intent_eval = IntentResolutionEvaluator(model_config, credential=credential, **reasoning)
 
 print("\n" + "=" * 60)
 print("2. INTENT RESOLUTION")
@@ -132,7 +137,7 @@ print(f"  Reason: {result.get('intent_resolution_reason', 'N/A')}")
 #    Uses a multi-turn conversation format.
 # ──────────────────────────────────────────────────────────────
 
-task_eval = TaskAdherenceEvaluator(model_config, credential=credential)
+task_eval = TaskAdherenceEvaluator(model_config, credential=credential, **reasoning)
 
 print("\n" + "=" * 60)
 print("3. TASK ADHERENCE")
