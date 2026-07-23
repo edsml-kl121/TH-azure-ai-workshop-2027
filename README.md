@@ -42,11 +42,6 @@ A comprehensive hands-on workshop for building AI agents with Azure AI Services,
    pip install -r requirements.txt
    ```
 
-4. **Run scripts directly**:
-   ```bash
-   python LAB_1_basic_agent/03_azure_ai_basic.py
-   ```
-
 ---
 
 ## Prerequisites
@@ -118,7 +113,8 @@ python LAB_0_setup/scripts/hydrating_vector_index.py
 
 Verify the search index is working:
 ```bash
-python LAB_0_setup/scripts/query_search_index.py
+cd LAB_0_setup/scripts/
+python query_search_index.py
 ```
 
 ✅ **Setup Complete!** Your Azure AI infrastructure and vector database are ready.
@@ -129,7 +125,8 @@ python LAB_0_setup/scripts/query_search_index.py
 
 Navigate to `LAB_1_basic_agent/` and run:
 ```bash
-python LAB_1_basic_agent/03_azure_ai_basic.py
+cd LAB_1_basic_agent/
+python 03_azure_ai_basic.py
 ```
 
 For more context, refer to [01_overview_foundry.md](LAB_1_basic_agent/01_overview_foundry.md) and [02_extra_notes.md](LAB_1_basic_agent/02_extra_notes.md).
@@ -142,12 +139,14 @@ This lab covers Azure AI Search fundamentals and Retrieval-Augmented Generation 
 
 #### Lab 2.0: Search Fundamentals
 ```bash
-python LAB_2_AI_search/00_search_fundamentals/search_fundamentals.py
+cd LAB_2_AI_search/
+python 00_search_fundamentals/search_fundamentals.py
 ```
 
 #### Lab 2.1: Basic RAG
 ```bash
-python LAB_2_AI_search/01_basic_rag/azure_ai_with_search_context_semantic.py
+cd LAB_2_AI_search/01_basic_rag/
+python azure_ai_with_search_context_semantic.py
 ```
 
 #### Lab 2.2: Bonus - Agentic Retrieval
@@ -163,7 +162,8 @@ See [03_foundry_portal/README.md](LAB_2_AI_search/03_foundry_portal/README.md) f
 
 #### Lab 2.4: Bonus - Redis
 ```bash
-python LAB_2_AI_search/04_bonus/redis_basics.py
+cd LAB_2_AI_search/04_bonus/
+python redis_basics.py
 ```
 
 ---
@@ -174,12 +174,14 @@ Navigate to `LAB_3_multi_agent_workflow/`:
 
 #### Lab 3.1: Sequential Agents
 ```bash
-python LAB_3_multi_agent_workflow/01_sequential_agents.py
+cd LAB_3_multi_agent_workflow/
+python 01_sequential_agents.py
 ```
 
 #### Lab 3.2: Handoff with Streamlit UI
 ```bash
-streamlit run LAB_3_multi_agent_workflow/02_handoff_streamlit.py
+cd LAB_3_multi_agent_workflow/
+streamlit run 02_handoff_streamlit.py
 ```
 
 #### Lab 3.3: Edge Conditions
@@ -197,7 +199,8 @@ This lab covers MCP servers and Azure API Management integration.
 
 #### Lab 4.1: Microsoft Learn MCP
 ```bash
-python LAB_4_MCP_APIM/01_mslearn_mcp.py
+cd LAB_4_MCP_APIM/
+python 01_mslearn_mcp.py
 ```
 
 #### Lab 4.2: Deploy Pets API Server
@@ -229,8 +232,9 @@ C) Go to MCP server tab → Create an MCP server → Assign the created product.
 
 D) Update `.env` with the MCP server URL and API key, then run:
 ```bash
-python LAB_4_MCP_APIM/03_existing_mcp_agent.py
-python LAB_4_MCP_APIM/04_multiple_mcp_servers.py
+cd LAB_4_MCP_APIM/
+python 03_existing_mcp_agent.py
+python 04_multiple_mcp_servers.py
 ```
 
 #### Bonus: Math MCP Server
@@ -249,12 +253,13 @@ bash deploy-to-azure.sh
 Navigate to `LAB_5_evaluation/` to learn about agent and model evaluation:
 
 ```bash
-python LAB_5_evaluation/01_nlp_scores.py
-python LAB_5_evaluation/02_ai_quality.py
-python LAB_5_evaluation/03_safety.py
-python LAB_5_evaluation/04_batch_evaluate.py
-python LAB_5_evaluation/05_custom_evaluators.py
-python LAB_5_evaluation/06_agentic_evaluation.py
+cd LAB_5_evaluation/
+python 01_nlp_scores.py
+python 02_ai_quality.py
+python 03_safety.py
+python 04_batch_evaluate.py
+python 05_custom_evaluators.py
+python 06_agentic_evaluation.py
 ```
 
 ---
@@ -264,7 +269,8 @@ python LAB_5_evaluation/06_agentic_evaluation.py
 Learn about agent tracing and monitoring with Azure Application Insights:
 
 ```bash
-python LAB_6_observability/agent_with_foundry_tracing.py
+cd LAB_6_observability/
+python agent_with_foundry_tracing.py
 ```
 
 ---
@@ -274,7 +280,8 @@ python LAB_6_observability/agent_with_foundry_tracing.py
 Explore Azure AI Document Intelligence for document analysis:
 
 ```bash
-python LAB_7_ai_services/sample_analyze_layout.py
+cd LAB_7_ai_services/
+python sample_analyze_layout.py
 ```
 
 ---

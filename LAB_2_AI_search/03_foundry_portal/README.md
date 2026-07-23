@@ -3,6 +3,8 @@
 
 ![alt text](../../assets/image.png)
 
+2.2 Please add the following instruction to the agent: Please use the information from knowledge base to answer the user's query
+
 3. Connect via. API Key
 
 ![alt text](../../assets/image-1.png)
